@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Try on</title>
+    <script type="module" src="https://tintvto.com/widget.js"></script>
+  </head>
+  <body>
+    <div>
+      <tint-vto token="eyJmZWF0dXJlcyI6WyJtYWtldXBfdmlydHVhbF90cnlfb24iXSwicHJvZHVjdHMiOlsiZXllbGluZXIiLCJleWVzaGFkb3ciLCJtYXNjYXJhIiwiYmx1c2giLCJmb3VuZGF0aW9uIiwibGlwc3RpY2siLCJleWVicm93IiwiaGlnaGxpZ2h0ZXIiLCJjb250b3VyIiwiY29uY2VhbGVyIiwiZXllX2NvbG9yIiwic2tpbl9zbW9vdGhlciJdLCJlbnRyeSI6ImJlc3QtbWF0Y2giLCJicmFuZCI6InByby1sYXNoIiwibGFuZ3VhZ2UiOiJlbmdsaXNoIiwidmVyc2lvbiI6InN0YW5kYXJkIn0=" />
+    
+      <script type="module">
+        !(async () => {
+          const widget = document.querySelector("tint-vto")
+  
+          await widget.open()
+  
+          await widget.useWebcam().then((wcam) => {
+            if (!wcam)
+              fetch("model.webp")
+                .then((r) => r.blob())
+                .then((b) => widget.usePhoto(b))
+          })
+        })()
+      </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
