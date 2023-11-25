@@ -6,12 +6,7 @@ function App() {
     if (widget) {
       await widget.open();
 
-      await widget.useWebcam().then((wcam: any) => {
-        if (!wcam)
-          fetch("model.webp")
-            .then((r) => r.blob())
-            .then((b) => widget.usePhoto(b));
-      });
+      fetch("model.webp").then((b) => widget.usePhoto(b));
     }
   };
 
