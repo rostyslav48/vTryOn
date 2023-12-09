@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TINT - Guided Virtual Try On</title>
+    <style>
+      body,
+      html {
+        padding: 0;
+        margin: 0;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        font-family: "Nunito Sans";
+        font-style: normal;
+        font-weight: 400;
+      }
+    </style>
+    <script type="module" src="widget/widget.js"></script>
+  </head>
+
+  <body style="background: #dcdcdd center/cover">
+    <tint-vto sdk-token="FbzDFUUlSDArE7sEogduADRKfEC8pkAjGbiOTzWJ3EKJo17fu1sxciaCArKSGeZysOANaATaeYsLQnvLB0XoUL0uvIzab+TUT89mc6eFkg4e1qwndj3t33qylwrI2+67MUbmIZdf9NBKmxzIWXh+AEm90g4HEa4Dz4noyMySzBd5fS16BiioalOFIUvRKbYtDfc2KOcsu4SVFI63gGjZZEpmaw68Qf6pVkHDjT2a4gvvF+k8yJ/oMtFXtpoPs3PtgCwgq+lgh72fhfoxt42q/rto7h1Jln5J/Ozqr8NOlFNITz7j6a4mb6RC/HCv1qciBwCSR7+3tzwG06uRJXrTKLxan4XAx0AefnMXyj2jymZhPlwX2mn4jlhOibAhSE0vVoNfqgS4jG3h4NCZMU9XI7Ik+LCgRcWkRy9k"></tint-vto>
+    <script type="module">
+        !(async () => {
+          const widget = document.querySelector("tint-vto")
+  
+          await widget.open()
+        })()
+    </script>
+
+    <script type="module">
+      
+    </script>
+  </body>
+</html>
