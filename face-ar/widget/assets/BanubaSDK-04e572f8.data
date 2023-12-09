@@ -1,0 +1,3295 @@
+For future versions
+const assets = bnb.scene.getAssetManager()
+
+const ContentMode = {
+  /* 0 */ SCALE_TO_FILL: 0,
+  /* 1 */ FILL: 1,
+  /* 2 */ FIT: 2,
+}
+
+exports = new class Background {
+  constructor() {
+    const camera = assets.findImage("camera") || assets.findImage("camera_image")
+    if (!camera) throw new Error("Unable to find 'camera' or 'camera_image' image which is mandatory")
+
+    const proceduralTexture = camera.asProceduralTexture()
+    if (!proceduralTexture)
+      throw new Error(
+        "The Background feature requires 'camera' image to be of type 'procedural_texture'",
+      )
+    const composer = proceduralTexture.asCameraComposer()
+
+    this._background = composer
+  }
+
+  /**
+   * Sets the background color
+   * @param {string} color - "R G B A" color
+   */
+  color(color) {
+    throw new Error("Background.color() in not implemented yet")
+  }
+
+  /**
+   * Sets the background transparency from 0 to 1
+   * @param {number} value - transparency value in [0, 1] range
+   */
+  transparency(value) {
+    this._background.setTransparencyFactor(1 - value)
+  }
+
+  /**
+   * Sets the file (image or video) as background texture
+   * @param {string|null} filename - path to the file to be loaded
+   * @param {boolean} play - play video after load finished
+   * @param {boolean} loop - loop video playback
+   */
+  texture(filename, play = true, loop = true) {
+    this._background.setBackgroundImage(filename || "", play, loop)
+  }
+
+  /**
+   * Sets the file (image) as background texture
+   * @param {int} fd - file descriptor
+   */
+  textureImageByFd(fd) {
+    this._background.setBackgroundImageByFd(fd)
+  }
+
+  /**
+   * Sets the file (video) as background texture
+   * @param {int} fd - file descriptor
+   * @param {boolean} play - play video after load finished
+   * @param {boolean} loop - loop video playback
+   */
+  textureVideoByFd(fd, play = true, loop = true) {
+    this._background.setBackgroundVideoByFd(fd, play, loop)
+  }
+
+  /**
+   * Rotates the background texture clockwise in degrees
+   * @param {number} angle - rotation angle in degrees
+   */
+  rotation(angle) {
+    this._background.setRotation(-angle)
+  }
+
+  /**
+   * Scales the background texture
+   * @param {number} factor - scale factor
+   */
+  scale(factor) {
+    this._background.setScale(factor, factor)
+  }
+
+  /**
+   * Sets the texture content mode
+   * @param {"scale_to_fill" | "fill" | "fit"} mode - content mode
+   */
+  contentMode(mode) {
+    this._background.setContentMode(ContentMode[mode.toUpperCase()])
+  }
+
+  /**
+   * Sets the background blur radius
+   * @param {number} [radius=0.5] - blur radius in [0, 1] range
+   */
+  blur(radius = 0.5) {
+    radius *= 5
+    this._background.enableBlur(radius > 0)
+    this._background.setBlurRadius(radius)
+  }
+
+  /**
+   * Sets the Bokeh blur radius
+   * @param {number} radius - Bokeh blur radius
+   */
+  bokeh(radius = 1) {
+    throw new Error("Background.bokeh() in not implemented yet")
+  }
+
+  /**
+   * Access to underlying video object 
+   */
+  getBackgroundVideo() {
+      return this._background.getBackgroundVideo()
+  }
+
+  /** Removes the background color and texture, resets any settings applied */
+  clear() {
+    // this.color("0 0 0 0")
+    this.transparency(0)
+    this.texture(null)
+    this.rotation(0)
+    this.scale(1)
+    this.contentMode("fill")
+    this.blur(0)
+    // this.bokeh(0)
+  }
+}
+require("./global")
+
+/**
+ * Polyfill for browser's
+ *
+ * console.log
+ * console.info
+ * console.warn
+ * console.error
+ */
+
+/***/
+
+/** @param {...*} data */
+const log = (...data) => {
+  const str = data.map(String).join(" ")
+  bnb.log(str)
+}
+
+const console = {
+  info: log.bind(null, "\n[Console.INFO]"),
+  log: log.bind(null, "\n[Console.LOG]"),
+  warn: log.bind(null, "\n[Console.WARN]"),
+  error: log.bind(null, "\n[Console.ERROR]"),
+}
+
+// JSC has it's own dummy `console`, overwrite it
+if (globalThis.console !== console) {
+  globalThis.console = console
+}
+/** 
+ * globalThis polyfill for MacOS/iOS Safari < 14
+ * @see https://wiki.duktape.org/howtoglobalobjectreference
+ */
+if (typeof globalThis === "undefined") {
+    const globalThis = new Function("return this")()
+    Object.defineProperty(globalThis, "globalThis", {
+        value: globalThis,
+        writable: true,
+        enumerable: false,
+        configurable: true,
+    })
+}
+
+/**
+ * Legacy Banuba SDK scripting support. 
+ * https://docs.banuba.com/face-ar-sdk/effect_constructor/reference/config_js
+ */
+
+var getFRXVersion = bnb.RenderInfo.getFrxVersion
+var getPlatform = bnb.RenderInfo.getPlatform
+
+var meshfxApi = bnb.meshfxApi
+
+function getCurrentTimeNs()
+{
+    return meshfxApi.getCurrentTimeNs()
+}
+
+function print(msg)
+{
+    return meshfxApi.print(msg)
+}
+
+function meshfxMsg(tag, instanceId, index = 0, param = "")
+{
+    return meshfxApi.meshfxMsg(tag, instanceId, index, param)
+}
+
+function meshfxReset()
+{
+    return meshfxApi.meshfxReset()
+}
+
+function playVideo(layerId, isLooped, speedFactor)
+{
+    return meshfxApi.playVideo(layerId, isLooped, speedFactor)
+}
+
+
+function playVideoRange(layerId, startTime, stopTime, isLooped, speedFactor)
+{
+    return meshfxApi.playVideoRange(layerId, startTime, stopTime, isLooped, speedFactor)
+}
+
+function pauseVideo(layerId)
+{
+    return meshfxApi.pauseVideo(layerId)
+}
+
+function stopVideo(layerId)
+{
+    return meshfxApi.stopVideo(layerId)
+}
+
+function seekVideo(layerId, time)
+{
+    // unimplemented
+}
+
+function getCurrentVideoTime(layerId)
+{
+    // unimplemented
+    return 0
+}
+
+function getVideoDuration(layerId)
+{
+    // unimplemented
+    return 0
+}
+
+function setVideoVolume(layerId, volume)
+{
+    // unimplemented
+}
+
+function getVideoVolume(layerId)
+{
+    return 0.0
+}
+
+function recordStart(maximumDuration)
+{
+    // unimplemented
+}
+
+function recordStop()
+{
+    // unimplemented
+}
+
+function playSound(filename, isLooped, speedFactor)
+{
+    return meshfxApi.playSound(filename, isLooped, speedFactor)
+}
+
+function playSoundRange(filename, startTime, stopTime, isLooped, speedFactor)
+{
+    return meshfxApi.playSoundRange(filename, startTime, stopTime, speedFactor)
+}
+
+function stopSound(filename)
+{
+    return meshfxApi.stopSound(filename)
+}
+
+function pauseSound(filename)
+{
+    return meshfxApi.pauseSound(filename)
+}
+
+function seekSound(filename, time)
+{
+    // unimplemented
+}
+
+function getCurrentSoundTime(filename)
+{
+    // unimplemented
+    return 0
+}
+
+function getSoundDuration(filename)
+{
+    return 0
+}
+
+function setSoundVolume(filename, volume) {
+    meshfxApi.setSoundVolume(filename, volume)
+}
+
+function showRecordButton()
+{
+    // unimplemented
+}
+
+function hideRecordButton()
+{
+    // umimplemented
+}
+
+function showHint(hint)
+{
+    // unimplemented
+}
+
+function hideHint()
+{
+    // unimplemented
+}
+
+function drawingAreaWidth()
+{
+    return meshfxApi.drawingAreaWidth()
+}
+
+function drawingAreaHeight()
+{
+    return meshfxApi.drawingAreaHeight()
+}
+
+
+function visibleAreaWidth()
+{
+    return meshfxApi.visibleAreaWidth()
+}
+
+
+function visibleAreaHeight()
+{
+    return meshfxApi.visibleAreaHeight()
+}
+
+
+function effectEvent(name, params)
+{
+    return meshfxApi.effectEvent(name, params)
+}
+
+function setRecognizerFeatures(features)
+{
+    return meshfxApi.setRecognizerFeatures(features)
+}
+
+function isMouthOpen()
+{
+    return meshfxApi.isMouthOpen()    
+}
+
+function isSmile()
+{
+    return meshfxApi.isSmile()
+}
+
+function isEyebrowUp()
+{
+    return meshfxApi.isEyebrowUp()
+}
+
+function isDisgust()
+{
+    return meshfxApi.isEyebrowUp()
+}
+
+function getEyesStatus()
+{
+    return meshfxApi.getEyesStatus()
+}
+
+
+function getNamedState(name)
+{
+    return meshfxApi.getNamedState(name)
+}
+
+
+function isMirrored()
+{
+    return meshfxApi.isMirrored()
+}
+
+
+function getRotationVector()
+{
+    return meshfxApi.getRotationVector()
+}
+
+function modelview()
+{
+    return meshfxApi.modelview()
+}
+
+exports = {
+    getFRXVersion,
+    getPlatform,
+    getCurrentTimeNs,
+    print,
+    meshfxMsg,
+    meshfxReset,
+    playVideo,
+    playVideoRange,
+    pauseVideo,
+    stopVideo,
+    seekVideo,
+    getCurrentVideoTime,
+    getVideoDuration,
+    setVideoVolume,
+    getVideoVolume,
+    recordStart,
+    recordStop,
+    playSound,
+    playSoundRange,
+    stopSound,
+    pauseSound,
+    seekSound,
+    getCurrentSoundTime,
+    getSoundDuration,
+    setSoundVolume,
+    showRecordButton,
+    hideRecordButton,
+    showHint,
+    hideHint,
+    drawingAreaWidth,
+    drawingAreaHeight,
+    visibleAreaWidth,
+    visibleAreaHeight,
+    effectEvent,
+    setRecognizerFeatures,
+    isMouthOpen,
+    isSmile,
+    isEyebrowUp,
+    isDisgust,
+    getEyesStatus,
+    getNamedState,
+    isMirrored,
+    getRotationVector,
+    modelview
+}
+
+exports = {
+    BNBApplyLightStreaks: (function() {
+        const assetManager = bnb.scene.getAssetManager();
+
+        const initAttachment = assetManager.createImage("light_streak_fullscreen_init_attachment__", bnb.ImageType.ATTACHMENT);
+        const initRT = assetManager.createRenderTarget("light_streak_fullscreen_init_RT__");
+        initRT.addAttachment(initAttachment);
+        initRT.setScale(1 / 4);
+
+        const fullscreenPolygon = assetManager.createStaticMesh("light_streak_fullscreen_poly__");
+        assetManager.uploadMeshData(fullscreenPolygon, "$builtin$meshes/fs_tri");
+
+        const thresholdParam = bnb.Parameter.create("light_streak_threshold");
+        thresholdParam.setVector4(new bnb.Vec4(0, 0, 0, 0));
+
+        const initMaterial = assetManager.createMaterial("init_light_streak", "$resources$/bnb_shaders/bnb/lib/init_light_streaks");
+        initMaterial.addImage("s", null);
+        initMaterial.addParameter(thresholdParam);
+        initMaterial.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+        const initLayer = bnb.Layer.create("light_streak_fullscreen_init_layer__");
+        const initEntity = bnb.scene.createEntity("light_streak_fullscreen_init_entity__");
+
+        const initMeshInstance = bnb.MeshInstance.create();
+        initMeshInstance.setVisible(true);
+        initMeshInstance.setMesh(fullscreenPolygon);
+        initMeshInstance.setSubGeometryMaterial("built_in_triangle", initMaterial);
+
+        initEntity.addIntoLayer(initLayer);
+        initEntity.addComponent(initMeshInstance.asComponent());
+
+        bnb.scene.getRoot().addChild(initEntity);
+        bnb.scene.getRenderList().addTask(initLayer, initRT);
+
+
+
+        const filterAttachment0 = assetManager.createImage("light_streak_fullscreen_filter_attachment0__", bnb.ImageType.ATTACHMENT);
+        const filterRT0 = assetManager.createRenderTarget("light_streak_fullscreen_filter_RT0__");
+        filterRT0.addAttachment(filterAttachment0);
+        filterRT0.setScale(1 / 4);
+
+        const filterAttachment1 = assetManager.createImage("light_streak_fullscreen_filter_attachment1__", bnb.ImageType.ATTACHMENT);
+        const filterRT1 = assetManager.createRenderTarget("light_streak_fullscreen_filter_RT1__");
+        filterRT1.addAttachment(filterAttachment1);
+        filterRT1.setScale(1 / 4);
+
+        const filterAttachment2 = assetManager.createImage("light_streak_fullscreen_filter_attachment2__", bnb.ImageType.ATTACHMENT);
+        const filterRT2 = assetManager.createRenderTarget("light_streak_fullscreen_filter_RT2__");
+        filterRT2.addAttachment(filterAttachment2);
+        filterRT2.setScale(1 / 4);
+
+        const filterAttachment3 = assetManager.createImage("light_streak_fullscreen_filter_attachment3__", bnb.ImageType.ATTACHMENT);
+        const filterRT3 = assetManager.createRenderTarget("light_streak_fullscreen_filter_RT3__");
+        filterRT3.addAttachment(filterAttachment3);
+        filterRT3.setScale(1 / 4);
+
+        const filterMaterial0 = assetManager.createMaterial("filter_light_streaks_0", "$resources$/bnb_shaders/bnb/lib/filter_light_streaks_0");
+        filterMaterial0.addImage("s", initAttachment);
+        filterMaterial0.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+        const filterMaterial1 = assetManager.createMaterial("filter_light_streaks_1", "$resources$/bnb_shaders/bnb/lib/filter_light_streaks_1");
+        filterMaterial1.addImage("s", filterAttachment0);
+        filterMaterial1.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+        const filterMaterial2 = assetManager.createMaterial("filter_light_streaks_2", "$resources$/bnb_shaders/bnb/lib/filter_light_streaks_2");
+        filterMaterial2.addImage("s", filterAttachment1);
+        filterMaterial2.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+        const filterMaterial3 = assetManager.createMaterial("filter_light_streaks_3", "$resources$/bnb_shaders/bnb/lib/filter_light_streaks_3");
+        filterMaterial3.addImage("s", filterAttachment2);
+        filterMaterial3.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+
+        const filterMeshInstance0 = bnb.MeshInstance.create();
+        filterMeshInstance0.setVisible(true);
+        filterMeshInstance0.setMesh(fullscreenPolygon);
+        filterMeshInstance0.setSubGeometryMaterial("built_in_triangle", filterMaterial0);
+
+        const filterLayer0 = bnb.Layer.create("light_streak_fullscreen_filter_layer0__");
+        const filterEntity0 = bnb.scene.createEntity("light_streak_fullscreen_filter_layer0__");
+        filterEntity0.addComponent(filterMeshInstance0.asComponent());
+        filterEntity0.addIntoLayer(filterLayer0);
+
+        bnb.scene.getRoot().addChild(filterEntity0);
+        bnb.scene.getRenderList().addTask(filterLayer0, filterRT0);
+
+        const filterMeshInstance1 = bnb.MeshInstance.create();
+        filterMeshInstance1.setVisible(true);
+        filterMeshInstance1.setMesh(fullscreenPolygon);
+        filterMeshInstance1.setSubGeometryMaterial("built_in_triangle", filterMaterial1);
+
+        const filterLayer1 = bnb.Layer.create("light_streak_fullscreen_filter_layer1__");
+        const filterEntity1 = bnb.scene.createEntity("light_streak_fullscreen_filter_layer1__");
+        filterEntity1.addComponent(filterMeshInstance1.asComponent());
+        filterEntity1.addIntoLayer(filterLayer1);
+
+        bnb.scene.getRoot().addChild(filterEntity1);
+        bnb.scene.getRenderList().addTask(filterLayer1, filterRT1);
+
+        const filterMeshInstance2 = bnb.MeshInstance.create();
+        filterMeshInstance2.setVisible(true);
+        filterMeshInstance2.setMesh(fullscreenPolygon);
+        filterMeshInstance2.setSubGeometryMaterial("built_in_triangle", filterMaterial2);
+
+        const filterLayer2 = bnb.Layer.create("light_streak_fullscreen_filter_layer2__");
+        const filterEntity2 = bnb.scene.createEntity("light_streak_fullscreen_filter_layer2__");
+        filterEntity2.addComponent(filterMeshInstance2.asComponent());
+        filterEntity2.addIntoLayer(filterLayer2);
+
+        bnb.scene.getRoot().addChild(filterEntity2);
+        bnb.scene.getRenderList().addTask(filterLayer2, filterRT2);
+
+        const filterMeshInstance3 = bnb.MeshInstance.create();
+        filterMeshInstance3.setVisible(true);
+        filterMeshInstance3.setMesh(fullscreenPolygon);
+        filterMeshInstance3.setSubGeometryMaterial("built_in_triangle", filterMaterial3);
+
+        const filterLayer3 = bnb.Layer.create("light_streak_fullscreen_filter_layer3__");
+        const filterEntity3 = bnb.scene.createEntity("light_streak_fullscreen_filter_layer3__");
+        filterEntity3.addComponent(filterMeshInstance3.asComponent());
+        filterEntity3.addIntoLayer(filterLayer3);
+
+        bnb.scene.getRoot().addChild(filterEntity3);
+        bnb.scene.getRenderList().addTask(filterLayer3, filterRT3);
+
+
+
+        const applyAttachment = assetManager.createImage("light_streak_fullscreen_apply_attachment__", bnb.ImageType.ATTACHMENT);
+        const applyRT = assetManager.createRenderTarget("light_streak_fullscreen_apply_RT__");
+        applyRT.addAttachment(applyAttachment);
+
+        const colorParam = bnb.Parameter.create("light_streaks_color");
+        colorParam.setVector4(new bnb.Vec4(0, 0, 0, 0));
+
+        const copyPixelsMaterial = assetManager.createMaterial("$builtin$materials/copy_pixels.100000000000", "");
+        copyPixelsMaterial.addImage("tex_src", null);
+        copyPixelsMaterial.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+        const applyMaterial = assetManager.createMaterial("apply_light_streak", "$resources$/bnb_shaders/bnb/lib/apply_light_streaks");
+        applyMaterial.addImage("s", filterAttachment3);
+        applyMaterial.addParameter(colorParam);
+        applyMaterial.setState(new bnb.State(bnb.BlendingMode.OFF, false, false, true, true));
+
+
+        const copyMeshInstance = bnb.MeshInstance.create();
+        copyMeshInstance.setVisible(true);
+        copyMeshInstance.setMesh(fullscreenPolygon);
+        copyMeshInstance.setSubGeometryMaterial("built_in_triangle", copyPixelsMaterial);
+
+        const copyLayer = bnb.Layer.create("light_streak_fullscreen_copy_layer__");
+        const copyEntity = bnb.scene.createEntity("light_streak_fullscreen_copy_entity__");
+        copyEntity.addComponent(copyMeshInstance.asComponent());
+        copyEntity.addIntoLayer(copyLayer);
+
+        bnb.scene.getRoot().addChild(copyEntity);
+        bnb.scene.getRenderList().addTask(copyLayer, applyRT);
+
+        const applyMeshInstance = bnb.MeshInstance.create();
+        applyMeshInstance.setVisible(true);
+        applyMeshInstance.setMesh(fullscreenPolygon);
+        applyMeshInstance.setSubGeometryMaterial("built_in_triangle", applyMaterial);
+
+        const applyLayer = bnb.Layer.create("light_streak_fullscreen_apply_layer__");
+        const applyEntity = bnb.scene.createEntity("light_streak_fullscreen_apply_entity__");
+        applyEntity.addComponent(applyMeshInstance.asComponent());
+        applyEntity.addIntoLayer(applyLayer);
+
+        bnb.scene.getRoot().addChild(applyEntity);
+        bnb.scene.getRenderList().addTask(applyLayer, applyRT);
+
+        return function(inputImage, applyImage, threshold, color, blend) {
+            thresholdParam.setVector4(new bnb.Vec4(threshold, 0, 0, 1));
+            initMaterial.addImage("s", inputImage);
+            copyPixelsMaterial.addImage("tex_src", applyImage);
+            applyMaterial.setState(new bnb.State(blend, false, false, true, true));
+            colorParam.setVector4(new bnb.Vec4(color[0], color[1], color[2], color[3]));
+        }
+    })()
+};require("./global")
+
+/**
+ * Polyfill for browser's
+ * 
+ * setTimeout
+ * clearTimeout
+ * setInterval
+ * clearInterval
+ */
+
+/***/
+
+const id = (() => {
+  let id = 0
+  return () => id++
+})()
+
+const eventLoop = {
+  /**
+   * @param {Function} listener
+   * @returns {Function} unsubscribe
+   */
+  subscribe: (listener) => {
+    bnb.eventListener.on("onUpdate", listener)
+
+    return () => {
+      bnb.eventListener.off("onUpdate", listener)
+    }
+  }
+}
+
+/** @type {Map<number, Function>} */
+const timers = new Map()
+
+/**
+ * @param {Function} callback - A function to be executyed every `delay` milliseconds.
+ * @param {number} [delay] - The time, in milliseconds (thousandths of a second), the timer should delay in between executions of the specified function.
+ * @param {...*} args - Additional arguments which are passed through to the function specified by func once the timer expires.
+ * @returns {number} intervalID - The returned intervalID is a numeric, non-zero value which identifies the timer created by the call to setInterval();
+ * this value can be passed to {@link clearInterval} to cancel the interval.
+ * 
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setInterval
+ */
+const setInterval = (callback, delay = 0, ...args) => {
+  let start = Date.now()
+
+  const intervalId = id()
+  const unsubscribe = eventLoop.subscribe(() => {
+    if (Date.now() - start < delay) return
+
+    start = Date.now()
+
+    callback(...args)
+  })
+
+  timers.set(intervalId, unsubscribe)
+
+  return intervalId
+}
+
+/**
+ * @param {number} intervalID - The identifier of the repeated action you want to cancel.
+ * This ID was returned by the corresponding call to {@link setInterval}.
+ */
+const clearInterval = (intervalID) => {
+  const unsubscribe = timers.get(intervalID)
+
+  if (unsubscribe) unsubscribe()
+
+  timers.delete(intervalID)
+}
+
+/**
+ * @param {Function} callback - A function to be executyed after the timer expires.
+ * @param {number} [delay] - The time, in milliseconds that the timer should wait before the specified function or code is executed.
+ * If this parameter is omitted, a value of 0 is used, meaning execute "immediately", or more accurately, the next event cycle.
+ * @param {...*} args - Additional arguments which are passed through to the function specified by func once the timer expires.
+ * @returns {number} timeoutID - The returned timeoutID is a positive integer value which identifies the timer created by the call to setTimeout().
+ * This value can be passed to {@link clearTimeout} to cancel the timeout.
+ * 
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/setTimeout
+ */
+const setTimeout = (callback, delay = 0, ...args) => {
+  const timeoutID = setInterval(() => {
+    clearInterval(timeoutID)
+
+    callback(...args)
+  }, delay)
+
+  return timeoutID
+}
+
+/**
+ * @param {number} timeoutID - The identifier of the timeout you want to cancel.
+ * This ID was returned by the corresponding call to {@link setTimeout}.
+ */
+const clearTimeout = clearInterval
+
+if (!globalThis.setInterval && !globalThis.clearInterval) {
+  globalThis.setInterval = setInterval
+  globalThis.clearInterval = clearInterval
+}
+
+if (!globalThis.setTimeout && !globalThis.clearTimeout) {
+  globalThis.setTimeout = setTimeout
+  globalThis.clearTimeout = clearTimeout
+}For future versions#ifndef BNB_ANIM_TRANSFORM_GLSL
+#define BNB_ANIM_TRANSFORM_GLSL
+
+#include <bnb/get_bone.glsl>
+#include <bnb/get_transform.glsl>
+
+#endif // BNB_ANIM_TRANSFORM_GLSL
+// https://github.com/tobspr/GLSL-Color-Spaces/blob/master/ColorSpaces.inc.glsl
+// https://github.com/graypegg/chromatism
+
+#ifndef BNB_COLOR_SPACES_GLSL
+#define BNB_COLOR_SPACES_GLSL
+
+// D65
+const vec3 bnb_color_spaces_WHITE = vec3(0.95047, 1.0000, 1.08883);
+const float bnb_color_spaces_EPSILON = 216. / 24389.;
+const float bnb_color_spaces_KAPPA = 24389. / 27.;
+const float bnb_color_spaces_PI = 3.1415926538;
+
+// clang-format off
+const mat3 bnb_color_spaces_RGB_TO_XYZ = mat3(
+    0.4124564, 0.2126729, 0.0193339, 
+    0.3575761, 0.7151522, 0.1191920, 
+    0.1804375, 0.0721750, 0.9503041
+);
+
+const mat3 bnb_color_spaces_XYZ_TO_RGB = mat3(
+    3.2404542, -0.9692660, 0.0556434, 
+    -1.5371385, 1.8760108, -0.2040259, 
+    -0.4985314, 0.0415560, 1.0572252
+);
+// clang-format on
+
+const float bnb_color_spaces_YUV2RGB_RED_CrV = 1.402;
+const float bnb_color_spaces_YUV2RGB_GREEN_CbU = 0.3441;
+const float bnb_color_spaces_YUV2RGB_GREEN_CrV = 0.7141;
+const float bnb_color_spaces_YUV2RGB_BLUE_CbU = 1.772;
+
+vec3 bnb_sRGB_to_linear(vec3 srgb)
+{
+    return vec3(
+        srgb.r <= 0.04045 ? srgb.r / 12.92 : pow((srgb.r + 0.055) / 1.055, 2.4),
+        srgb.g <= 0.04045 ? srgb.g / 12.92 : pow((srgb.g + 0.055) / 1.055, 2.4),
+        srgb.b <= 0.04045 ? srgb.b / 12.92 : pow((srgb.b + 0.055) / 1.055, 2.4)
+    );
+}
+
+vec3 bnb_linear_to_sRGB(vec3 lrgb)
+{
+    return vec3(
+        lrgb.r <= 0.0031308 ? lrgb.r * 12.92 : 1.055 * pow(lrgb.r, 1.0 / 2.4) - 0.055,
+        lrgb.g <= 0.0031308 ? lrgb.g * 12.92 : 1.055 * pow(lrgb.g, 1.0 / 2.4) - 0.055,
+        lrgb.b <= 0.0031308 ? lrgb.b * 12.92 : 1.055 * pow(lrgb.b, 1.0 / 2.4) - 0.055
+    );
+}
+
+
+/* yuva */
+
+
+vec4 bnb_rgba_to_yuva(vec4 rgba)
+{
+    vec4 yuva = vec4(0.);
+
+    yuva.x = rgba.r * 0.299 + rgba.g * 0.587 + rgba.b * 0.114;
+    yuva.y = rgba.r * -0.169 + rgba.g * -0.331 + rgba.b * 0.5 + 0.5;
+    yuva.z = rgba.r * 0.5 + rgba.g * -0.419 + rgba.b * -0.081 + 0.5;
+    yuva.w = rgba.a;
+
+    return yuva;
+}
+
+vec4 bnb_yuva_to_rgba(vec4 yuva)
+{
+    float y = yuva.x;
+    float u = yuva.y - 0.5;
+    float v = yuva.z - 0.5;
+
+    float r = y + bnb_color_spaces_YUV2RGB_RED_CrV * v;
+    float g = y - bnb_color_spaces_YUV2RGB_GREEN_CbU * u - bnb_color_spaces_YUV2RGB_GREEN_CrV * v;
+    float b = y + bnb_color_spaces_YUV2RGB_BLUE_CbU * u;
+
+    return vec4(r, g, b, yuva.a);
+}
+
+
+/* XYZ */
+
+
+vec3 bnb_rgb_to_XYZ(vec3 rgb)
+{
+    return bnb_color_spaces_RGB_TO_XYZ * rgb;
+}
+
+vec3 bnb_XYZ_to_rgb(vec3 xyz)
+{
+    return clamp(bnb_color_spaces_XYZ_TO_RGB * xyz, 0., 1.);
+}
+
+
+/* Luv */
+
+// https://www.easyrgb.com/en/math.php
+// http://www.brucelindbloom.com/index.html?Math.html
+
+vec2 bnb_color_spaces_chrome_coords(vec3 c)
+{
+    return c.xy * vec2(4., 9.) / (c.x + 15. * c.y + 3. * c.z);
+}
+
+vec3 bnb_XYZ_to_Luv(vec3 xyz)
+{
+    float yr = xyz.y / bnb_color_spaces_WHITE.y;
+
+    float L = yr > bnb_color_spaces_EPSILON
+                  ? (116. * pow(yr, 1. / 3.)) - 16.
+                  : bnb_color_spaces_KAPPA * yr;
+
+    vec2 uv_ = bnb_color_spaces_chrome_coords(xyz);
+    vec2 uv_r = bnb_color_spaces_chrome_coords(bnb_color_spaces_WHITE);
+
+    vec2 uv = 13. * L * (uv_ - uv_r);
+
+    return vec3(L, uv);
+}
+
+vec3 bnb_Luv_to_XYZ(vec3 luv)
+{
+    vec2 uv0 = bnb_color_spaces_chrome_coords(bnb_color_spaces_WHITE);
+
+    float a = (1. / 3.) * (52. * luv.x / (luv.y + 13. * luv.x * uv0.x) - 1.);
+
+    float Y = luv.x > (bnb_color_spaces_KAPPA * bnb_color_spaces_EPSILON)
+                  ? (pow(((luv.x + 16.) / 116.), 3.))
+                  : luv.x / bnb_color_spaces_KAPPA;
+
+    float b = -5. * Y;
+    float d = Y * (((39. * luv.x) / (luv.z + ((13. * luv.x) * uv0.y))) - 5.);
+
+    float X = (d - b) / (a - (-1. / 3.));
+    float Z = (X * a) + b;
+
+    return vec3(X, Y, Z);
+}
+
+
+/* LCh */
+
+
+vec3 bnb_Luv_to_LCh(vec3 luv)
+{
+    float L = luv.x;
+    float C = sqrt(pow(luv.y / 100., 2.) + pow(luv.z / 100., 2.));
+
+    float h = atan(luv.z, luv.y);
+
+    if (h < 0.)
+        h += (2. * bnb_color_spaces_PI);
+
+    h = degrees(h);
+
+    return vec3(L / 100., C, h);
+}
+
+vec3 bnb_LCh_to_Luv(vec3 lch)
+{
+    float L = lch.x;
+
+    float h = radians(lch.z);
+
+    float u = lch.y * cos(h);
+    float v = lch.y * sin(h);
+
+    return vec3(L * 100., u * 100., v * 100.);
+}
+
+
+/* YIQ / YUV */
+
+
+vec3 bnb_rgb_to_YIQ(vec3 rgb)
+{
+    float y = (0.299 * rgb.r) + (0.587 * rgb.g) + (0.114 * rgb.b);
+    float i = (0.596 * rgb.r) + (-0.274 * rgb.g) + (-0.322 * rgb.b);
+    float q = (0.211 * rgb.r) + (-0.523 * rgb.g) + (0.312 * rgb.b);
+    /* YIQ is not a transformation of RGB, so it's pretty lossy */
+    i = clamp(i, -0.5957, 0.5957);
+    q = clamp(q, -0.5226, 0.5226);
+
+    return vec3(y, i, q);
+}
+
+vec3 bnb_YIQ_to_rgb(vec3 yiq)
+{
+    float i = clamp(yiq.y, -0.5957, 0.5957);
+    float q = clamp(yiq.z, -0.5226, 0.5226);
+
+    float r = clamp(yiq.x + (0.956 * i) + (0.621 * q), 0., 1.);
+    float g = clamp(yiq.x + (-0.272 * i) + (-0.647 * q), 0., 1.);
+    float b = clamp(yiq.x + (-1.106 * i) + (-1.703 * q), 0., 1.);
+
+    return vec3(r, g, b);
+}
+
+
+/* Helpers */
+
+// Those functions should not be used in new effects as there is no search for
+// closest representable RGB color in conversion from XYZ.
+// There is just a clamp into [0,1] RGB in bnb_XYZ_to_rgb
+// and this can produce wrong colors in some edge cases.
+
+// skip sRGB <-> linear conversions in LCh helpers
+// to make Makeup effect from v1.7 work the same way with later sdk versions
+
+vec3 bnb_rgb_to_LCh(vec3 rgb)
+{
+    return bnb_Luv_to_LCh(bnb_XYZ_to_Luv(bnb_rgb_to_XYZ(/*bnb_sRGB_to_linear*/ (rgb))));
+}
+
+vec3 bnb_LCh_to_rgb(vec3 lch)
+{
+    return /*bnb_linear_to_sRGB*/ (bnb_XYZ_to_rgb(bnb_Luv_to_XYZ(bnb_LCh_to_Luv(lch))));
+}
+
+vec3 bnb_rgb_to_Luv(vec3 rgb)
+{
+    return bnb_XYZ_to_Luv(bnb_rgb_to_XYZ(bnb_sRGB_to_linear(rgb)));
+}
+
+vec3 bnb_Luv_to_rgb(vec3 luv)
+{
+    return bnb_linear_to_sRGB(bnb_XYZ_to_rgb(bnb_Luv_to_XYZ(luv)));
+}
+
+#endif // BNB_COLOR_SPACES_GLSL
+#ifndef BNB_DECODE_INT1010102_GLSL
+#define BNB_DECODE_INT1010102_GLSL
+
+#if defined(BNB_VK_1)
+vec4 bnb_decode_int1010102(uint u)
+{
+    float ux = u & 1023u;
+    float uy = (u >> 10u) & 1023u;
+    float uz = (u >> 20u) & 1023u;
+    float uw = u >> 30u;
+    float x = float(ux <= 511u ? ux : ux - 1024u) / 511.;
+    float y = float(uy <= 511u ? uy : uy - 1024u) / 511.;
+    float z = float(uz <= 511u ? uz : uz - 1024u) / 511.;
+    float w = float(uw <= 1u ? uw : uw - 4u);
+    return vec4(x, y, z, w);
+}
+#else
+    #define bnb_decode_int1010102(v) v
+#endif
+
+/** decode_int1010102 is DEPRECATED */
+#define decode_int1010102(arg) bnb_decode_int1010102(arg)
+
+#endif // BNB_DECODE_INT1010102_GLSL#ifndef BNB_GET_BONE_GLSL
+#define BNB_GET_BONE_GLSL
+
+mat4 bnb_get_bone(uint bone_idx, int y)
+{
+    int b = int(bone_idx) * 3;
+    mat4 m = mat4(
+        texelFetch(BNB_SAMPLER_2D(bnb_BONES), ivec2(b, y), 0),
+        texelFetch(BNB_SAMPLER_2D(bnb_BONES), ivec2(b + 1, y), 0),
+        texelFetch(BNB_SAMPLER_2D(bnb_BONES), ivec2(b + 2, y), 0),
+        vec4(0., 0., 0., 1.)
+    );
+    return m;
+}
+
+#endif // BNB_GET_BONE_GLSL
+#ifndef BNB_GET_TRANSFORN_GLSL
+#define BNB_GET_TRANSFORN_GLSL
+
+mat4 bnb_get_transform()
+{
+    int y = int(bnb_ANIMKEY);
+    mat4 m = bnb_get_bone(attrib_bones[0], y);
+#ifndef BNB_1_BONE
+    if (attrib_weights[1] > 0.) {
+        m = m * attrib_weights[0] + bnb_get_bone(attrib_bones[1], y) * attrib_weights[1];
+
+        if (attrib_weights[2] > 0.) {
+            m += bnb_get_bone(attrib_bones[2], y) * attrib_weights[2];
+
+            if (attrib_weights[3] > 0.) {
+                m += bnb_get_bone(attrib_bones[3], y) * attrib_weights[3];
+            }
+        }
+    }
+#endif // BNB_1_BONE
+    return m;
+}
+
+#endif // BNB_GET_TRANSFORN_GLSL/**
+ * Common frgament sgader declaration. Always make it as first include.
+ * Other includes rely on it.
+ */
+
+
+#ifndef BNB_FRAGMENT_SHADER
+#define BNB_FRAGMENT_SHADER
+
+#include <bnb/version.glsl>
+
+#include <bnb/samplers_declaration.glsl>
+#include <bnb/textures_lookup.glsl>
+
+//---------- In-out ----------
+
+#if defined(BNB_GL_ES_3) || defined(BNB_GL)
+    #define BNB_IN(l) in
+#else
+    #define BNB_IN(l) layout(location = l) in
+#endif
+
+#define BNB_CENTROID centroid
+// declare out color
+layout(location = 0) out vec4 bnb_FragColor;
+#endif // BNB_FRAGMENT_SHADER/**
+ * Common vertex shader declaration. Always include first. Always
+ * include in `main` source only.
+ * Other includes rely on it.
+ */
+
+#ifndef BNB_VERTEX_SHADER
+#define BNB_VERTEX_SHADER
+
+#include <bnb/version.glsl>
+#include <bnb/samplers_declaration.glsl>
+#include <bnb/textures_lookup.glsl>
+
+#define BNB_IN in
+
+#if defined(BNB_GL_ES_3) || defined(BNB_GL)
+    #define BNB_OUT(l) out
+    #define BNB_LAYOUT_LOCATION(l) layout(location = l)
+#elif defined(BNB_VK_1)
+    #define BNB_OUT(l) layout(location = l) out
+    #define BNB_LAYOUT_LOCATION(l) layout(location = l)
+out gl_PerVertex
+{
+    vec4 gl_Position;
+    float gl_PointSize;
+};
+#endif
+
+#ifdef BNB_VK_1
+    #define gl_VertexID gl_VertexIndex
+    #define gl_InstanceID gl_InstanceIndex
+#endif
+
+#endif // BNB_VERTEX_SHADER#include <bnb/glsl.frag>
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+BNB_IN(0)
+vec2 var_uv;
+
+void main()
+{
+    float streak = dot(textureLod(BNB_SAMPLER_2D(s), var_uv, 0.), vec4(1.));
+    if (streak < 1. / 255.)
+        discard;
+    vec3 color = light_streaks_color.rgb;
+    bnb_FragColor = vec4(color * streak, streak);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+#ifdef BNB_VK_1
+    var_uv.y = 1. - var_uv.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec3 translation;
+
+void main()
+{
+    bnb_FragColor = vec4(translation, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+layout(location = 1) in vec3 attrib_static_pos;
+layout(location = 2) in vec2 attrib_uv;
+layout(location = 3) in vec4 attrib_mask;
+
+BNB_OUT(0)
+vec3 translation;
+
+vec2 glfx_morph_coord(vec3 v)
+{
+    const float half_angle = radians(104.);
+    const float y0 = -110.;
+    const float y1 = 112.;
+    float x = atan(v.x, v.z) / half_angle;
+    float y = ((v.y - y0) / (y1 - y0)) * 2. - 1.;
+    return vec2(x, y);
+}
+
+void main()
+{
+    gl_Position = vec4(glfx_morph_coord(attrib_static_pos), 0., 1.);
+    translation = attrib_pos - attrib_static_pos;
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec3 translation;
+
+void main()
+{
+    bnb_FragColor = vec4(translation, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+layout(location = 1) in vec3 attrib_static_pos;
+layout(location = 2) in vec2 attrib_uv;
+layout(location = 3) in vec4 attrib_mask;
+
+BNB_OUT(0)
+vec3 translation;
+
+void main()
+{
+    vec2 v = smoothstep(0., 1., attrib_uv) * 2. - 1.;
+    gl_Position = vec4(v, 0., 1.);
+    const float max_range = 40.; // morph translation will be clamped to [-max_range,+max_range]
+    translation = ((attrib_pos - attrib_static_pos) / max_range) * 0.5 + 0.5;
+}#include <bnb/glsl.frag>
+
+centroid BNB_IN(0) vec2 var_c;
+
+void main()
+{
+    bnb_FragColor = vec4(var_c, 0., 0.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_original;
+layout(location = 1) in vec3 attrib_morph;
+
+centroid BNB_OUT(0) vec2 var_c;
+
+void main()
+{
+    const int EXPAND_PASSES = 8;
+    const float NPUSH = 75.;
+
+    int i = int(gl_InstanceID);
+
+    float scale = 1. - float(i) / float(EXPAND_PASSES + 1);
+    scale = scale * scale * (3. - 2. * scale); // smoothstep fall-off
+    float d0 = float(i) / float(EXPAND_PASSES + 1);
+    float d1 = float(i + 1) / float(EXPAND_PASSES + 1);
+
+#ifndef BNB_VK_1
+    vec4 npush_scale = vec4(NPUSH * float(i) / float(EXPAND_PASSES), scale * 0.5, d1 - d0, d0 + d1 - 1.);
+#else
+    vec4 npush_scale = vec4(NPUSH * float(i) / float(EXPAND_PASSES), scale * 0.5, (d1 - d0) * 0.5, (d0 + d1) * 0.5);
+#endif
+
+    gl_Position = bnb_MVP * vec4(attrib_morph * (1. + npush_scale.x / length(attrib_morph)), 1.);
+    gl_Position.z = gl_Position.z * npush_scale.z + gl_Position.w * npush_scale.w;
+    vec4 pos_no_push = bnb_MVP * vec4(attrib_morph, 1.);
+    vec4 original_pos = bnb_MVP * vec4(attrib_original, 1.);
+    var_c = npush_scale.y * (original_pos.xy / original_pos.w - pos_no_push.xy / pos_no_push.w);
+}#include <bnb/glsl.frag>
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_downscale_tex);
+
+BNB_IN(0)
+vec2 var_uv;
+
+void main()
+{
+    vec4 pixel = textureLod(BNB_SAMPLER_2D(s_downscale_tex), var_uv, 0.);
+
+    vec4 pp = textureLodOffset(BNB_SAMPLER_2D(s_downscale_tex), var_uv, 0., ivec2(1, 1));
+    vec4 mp = textureLodOffset(BNB_SAMPLER_2D(s_downscale_tex), var_uv, 0., ivec2(-1, 1));
+    vec4 mm = textureLodOffset(BNB_SAMPLER_2D(s_downscale_tex), var_uv, 0., ivec2(-1, -1));
+    vec4 pm = textureLodOffset(BNB_SAMPLER_2D(s_downscale_tex), var_uv, 0., ivec2(1, -1));
+
+    // clang-format off
+    vec3 sum = (0.5*pixel.xyz*(1. - pixel.w) + 0.125*(pp.xyz*(1. - pp.w) + mp.xyz*(1. - mp.w) + mm.xyz*(1. - mm.w) + pm.xyz*(1. - pm.w)))
+        / (0.5*(1. - pixel.w) + 0.125*((1. - pp.w) + (1. - mp.w) + (1. - mm.w) + (1. - pm.w)));
+    // clang-format on
+    bnb_FragColor = vec4(sum, pixel.w);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos.xy;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+}#include <bnb/glsl.frag>
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_upscale_tex);
+
+BNB_IN(0)
+vec4 var_uv;
+
+void main()
+{
+    // clang-format off
+    vec3 sum =
+        (1. / 6.) * (
+            textureLod(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0.).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(-1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(0, -1)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(-1, -1)).xyz) +
+        (1. / 12.) * (
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(-1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(0, 1)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(0, -1)).xyz);
+    // clang-format on
+
+    bnb_FragColor = vec4(sum, 1.);
+}
+#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_upscale_tex);
+
+BNB_OUT(0)
+vec4 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos.xy;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv.xy = v * 0.5 + 0.5;
+    var_uv.zw = var_uv.xy + 0.5 / vec2(textureSize(BNB_SAMPLER_2D(s_upscale_tex), 0));
+}#include <bnb/glsl.frag>
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_upscale_tex);
+BNB_DECLARE_SAMPLER_2D(2, 3, s_src_tex);
+
+BNB_IN(0)
+vec4 var_uv;
+
+void main()
+{
+    // clang-format off
+    vec3 sum =
+        (1. / 6.) * (
+            textureLod(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0.).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(-1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(0, -1)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.zw, 0., ivec2(-1, -1)).xyz) +
+        (1. / 12.) * (
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(-1, 0)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(0, 1)).xyz +
+            textureLodOffset(BNB_SAMPLER_2D(s_upscale_tex), var_uv.xy, 0., ivec2(0, -1)).xyz);
+    // clang-format on
+    vec2 src_uv = var_uv.xy;
+#ifdef BNB_VK_1
+    src_uv.y = 1. - src_uv.y;
+#endif
+    vec4 src = textureLod(BNB_SAMPLER_2D(s_src_tex), src_uv, 0.);
+
+    bnb_FragColor = vec4(mix(sum, src.xyz, src.w), 1.);
+}
+#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec2 var_uv;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, tex_y);
+BNB_DECLARE_SAMPLER_2D(2, 3, tex_u);
+BNB_DECLARE_SAMPLER_2D(4, 5, tex_v);
+BNB_DECLARE_SAMPLER_2D(6, 7, tex_uv);
+BNB_DECLARE_SAMPLER_2D(8, 9, tex_rgb);
+
+#include <bnb/sample_camera.glsl>
+
+void main()
+{
+    vec2 uv = var_uv;
+    bnb_FragColor = bnb_sample_camera(uv);
+    // discard pixels where uv values are out of range [0, 1]
+    vec2 s = step(vec2(0., 0.), uv) - step(vec2(1., 1.), uv);
+    bnb_FragColor.rgb = mix(vec3(0., 0., 0.), bnb_FragColor.rgb, s.x * s.y);
+    bnb_FragColor.a = 1.;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+
+    mat2 ori = mat2(bnb_camera_orientation.xy, bnb_camera_orientation.zw);
+    var_uv = (ori * vec2(v.x * bnb_camera_scale_i420.x, v.y)) * 0.5 + 0.5;
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec4 var_uv;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, tex_y);
+BNB_DECLARE_SAMPLER_2D(2, 3, tex_u);
+BNB_DECLARE_SAMPLER_2D(4, 5, tex_v);
+BNB_DECLARE_SAMPLER_2D(6, 7, tex_uv);
+BNB_DECLARE_SAMPLER_2D(8, 9, tex_rgb);
+BNB_DECLARE_SAMPLER_2D(10, 11, tex_bg_mask);
+
+#include <bnb/sample_camera.glsl>
+
+void main()
+{
+    vec2 uv = var_uv.xy;
+    bnb_FragColor = bnb_sample_camera(uv);
+    // discard pixels where uv values are out of range [0, 1]
+    vec2 s = step(vec2(0., 0.), uv) - step(vec2(1., 1.), uv);
+    bnb_FragColor.rgb = mix(vec3(0., 0., 0.), bnb_FragColor.rgb, s.x * s.y);
+    float bg_mask_multiplier = bnb_rgba_camera.y;
+    bnb_FragColor.a = 1. - textureLod(BNB_SAMPLER_2D(tex_bg_mask), var_uv.zw, 0.).x * bg_mask_multiplier;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec4 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+
+    mat2 ori = mat2(bnb_camera_orientation.xy, bnb_camera_orientation.zw);
+    var_uv.xy = (ori * vec2(v.x * bnb_camera_scale_i420.x, v.y)) * 0.5 + 0.5;
+    var_uv.zw = vec2(vec3(v, 1.) * mat3(background_nn_transform));
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec2 var_uv;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, tex_src);
+
+void main()
+{
+    bnb_FragColor = textureLod(BNB_SAMPLER_2D(tex_src), var_uv, 0.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+#ifdef BNB_VK_1
+    var_uv.y = 1. - var_uv.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec4 var_uv_off;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+void main()
+{
+    vec2 uv = var_uv_off.xy;
+    vec2 d = var_uv_off.zw;
+
+    float s0 = 2. * 0.20236;
+    float s1 = 0.124009 + 0.179044;
+    float s2 = 0.028532 + 0.067234;
+
+    float o1 = 1. + 0.179044 / s1;
+    float o2 = 3. + 0.067234 / s2;
+
+    vec4 c = s0 * textureLod(BNB_SAMPLER_2D(s), uv, 0.);
+
+    vec2 uv_off = d * o1;
+    c += s1 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    uv_off = d * o2;
+    c += s2 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    bnb_FragColor = c * 1.3;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+#define PASS_ID 0
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+BNB_OUT(0)
+vec4 var_uv_off;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    vec2 uv = v * 0.5 + 0.5;
+
+    vec2 px_size = 1. / vec2(bnb_SCREEN.xy / 4.0);
+    float kernel_scales[4];
+    kernel_scales[0] = 1.;
+    kernel_scales[1] = 1.3;
+    kernel_scales[2] = 1.3 * 1.3;
+    kernel_scales[3] = 1.3 * 1.3 * 1.3;
+    var_uv_off = vec4(uv, px_size * kernel_scales[PASS_ID]);
+#ifdef BNB_VK_1
+    var_uv_off.y = 1. - var_uv_off.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec4 var_uv_off;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+void main()
+{
+    vec2 uv = var_uv_off.xy;
+    vec2 d = var_uv_off.zw;
+
+    float s0 = 2. * 0.20236;
+    float s1 = 0.124009 + 0.179044;
+    float s2 = 0.028532 + 0.067234;
+
+    float o1 = 1. + 0.179044 / s1;
+    float o2 = 3. + 0.067234 / s2;
+
+    vec4 c = s0 * textureLod(BNB_SAMPLER_2D(s), uv, 0.);
+
+    vec2 uv_off = d * o1;
+    c += s1 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    uv_off = d * o2;
+    c += s2 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    bnb_FragColor = c * 1.3;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+#define PASS_ID 1
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+BNB_OUT(0)
+vec4 var_uv_off;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    vec2 uv = v * 0.5 + 0.5;
+
+    vec2 px_size = 1. / vec2(bnb_SCREEN.xy / 4.0);
+    float kernel_scales[4];
+    kernel_scales[0] = 1.;
+    kernel_scales[1] = 1.3;
+    kernel_scales[2] = 1.3 * 1.3;
+    kernel_scales[3] = 1.3 * 1.3 * 1.3;
+    var_uv_off = vec4(uv, px_size * kernel_scales[PASS_ID]);
+#ifdef BNB_VK_1
+    var_uv_off.y = 1. - var_uv_off.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec4 var_uv_off;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+void main()
+{
+    vec2 uv = var_uv_off.xy;
+    vec2 d = var_uv_off.zw;
+
+    float s0 = 2. * 0.20236;
+    float s1 = 0.124009 + 0.179044;
+    float s2 = 0.028532 + 0.067234;
+
+    float o1 = 1. + 0.179044 / s1;
+    float o2 = 3. + 0.067234 / s2;
+
+    vec4 c = s0 * textureLod(BNB_SAMPLER_2D(s), uv, 0.);
+
+    vec2 uv_off = d * o1;
+    c += s1 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    uv_off = d * o2;
+    c += s2 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    bnb_FragColor = c * 1.3;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+#define PASS_ID 2
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+BNB_OUT(0)
+vec4 var_uv_off;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    vec2 uv = v * 0.5 + 0.5;
+
+    vec2 px_size = 1. / vec2(bnb_SCREEN.xy / 4.0);
+    float kernel_scales[4];
+    kernel_scales[0] = 1.;
+    kernel_scales[1] = 1.3;
+    kernel_scales[2] = 1.3 * 1.3;
+    kernel_scales[3] = 1.3 * 1.3 * 1.3;
+    var_uv_off = vec4(uv, px_size * kernel_scales[PASS_ID]);
+#ifdef BNB_VK_1
+    var_uv_off.y = 1. - var_uv_off.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec4 var_uv_off;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+void main()
+{
+    vec2 uv = var_uv_off.xy;
+    vec2 d = var_uv_off.zw;
+
+    float s0 = 2. * 0.20236;
+    float s1 = 0.124009 + 0.179044;
+    float s2 = 0.028532 + 0.067234;
+
+    float o1 = 1. + 0.179044 / s1;
+    float o2 = 3. + 0.067234 / s2;
+
+    vec4 c = s0 * textureLod(BNB_SAMPLER_2D(s), uv, 0.);
+
+    vec2 uv_off = d * o1;
+    c += s1 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    uv_off = d * o2;
+    c += s2 * vec4(textureLod(BNB_SAMPLER_2D(s), uv + uv_off, 0.).x, textureLod(BNB_SAMPLER_2D(s), uv + vec2(uv_off.x, -uv_off.y), 0.).y, textureLod(BNB_SAMPLER_2D(s), uv - uv_off, 0.).z, textureLod(BNB_SAMPLER_2D(s), uv + vec2(-uv_off.x, uv_off.y), 0.).w);
+
+    bnb_FragColor = c * 1.3;
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+#define PASS_ID 3
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+BNB_OUT(0)
+vec4 var_uv_off;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    vec2 uv = v * 0.5 + 0.5;
+
+    vec2 px_size = 1. / vec2(bnb_SCREEN.xy / 4.0);
+    float kernel_scales[4];
+    kernel_scales[0] = 1.;
+    kernel_scales[1] = 1.3;
+    kernel_scales[2] = 1.3 * 1.3;
+    kernel_scales[3] = 1.3 * 1.3 * 1.3;
+    var_uv_off = vec4(uv, px_size * kernel_scales[PASS_ID]);
+#ifdef BNB_VK_1
+    var_uv_off.y = 1. - var_uv_off.y;
+#endif
+}#include <bnb/glsl.frag>
+
+precision mediump float;
+precision mediump sampler2DArray;
+precision mediump sampler2DShadow;
+
+BNB_IN(0)
+vec2 var_uv;
+BNB_IN(1)
+vec3 var_t;
+BNB_IN(2)
+vec3 var_b;
+BNB_IN(3)
+vec3 var_n;
+BNB_IN(4)
+vec3 var_v;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, base_color);
+BNB_DECLARE_SAMPLER_2D(2, 3, metallic_roughness);
+BNB_DECLARE_SAMPLER_2D(4, 5, normal);
+BNB_DECLARE_SAMPLER_CUBE(6, 7, tex_ibl_diff);
+BNB_DECLARE_SAMPLER_CUBE(8, 9, tex_ibl_spec);
+BNB_DECLARE_SAMPLER_2D(12, 13, emissive);
+
+// gamma to linear
+vec3 g2l(vec3 g)
+{
+    return g * (g * (g * 0.305306011 + 0.682171111) + 0.012522878);
+}
+
+// combined hdr to ldr and linear to gamma
+vec3 l2g(vec3 l)
+{
+    return sqrt(1.33 * (1. - exp(-l))) - 0.03;
+}
+
+vec3 fresnel_schlick_roughness(float prod, vec3 F0, float roughness)
+{
+    return F0 + (max(F0, 1. - roughness) - F0) * pow(1. - prod, 5.);
+}
+
+vec2 brdf_approx(float Roughness, float NoV)
+{
+    const vec4 c0 = vec4(-1., -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1., 0.0425, 1.04, -0.04);
+    vec4 r = Roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+    return AB;
+}
+
+void main()
+{
+    vec4 base_opacity = texture(BNB_SAMPLER_2D(base_color), var_uv);
+
+    vec3 base = g2l(base_opacity.xyz);
+    float opacity = base_opacity.w;
+
+    vec3 mrao = texture(BNB_SAMPLER_2D(metallic_roughness), var_uv).xyz;
+
+    float metallic = mrao.z;
+    float roughness = mrao.y;
+    float ao = mrao.x;
+
+    vec3 N = normalize(mat3(var_t, var_b, var_n) * (texture(BNB_SAMPLER_2D(normal), var_uv).xyz * 2. - 1.));
+    N *= gl_FrontFacing ? 1. : -1.;
+
+    vec3 V = normalize(-var_v);
+    float cN_V = max(0., dot(N, V));
+    vec3 R = reflect(-V, N);
+
+    vec3 F0 = mix(vec3(0.04), base, metallic);
+
+    vec3 F = fresnel_schlick_roughness(cN_V, F0, roughness);
+    vec3 kD = (1. - F) * (1. - metallic);
+
+    vec3 diffuse = texture(BNB_SAMPLER_CUBE(tex_ibl_diff), N).xyz * base;
+
+    const float MAX_REFLECTION_LOD = 7.; // number of mip levels in tex_ibl_spec
+    vec3 prefilteredColor = textureLod(BNB_SAMPLER_CUBE(tex_ibl_spec), R, roughness * MAX_REFLECTION_LOD).xyz;
+    vec2 brdf = brdf_approx(roughness, cN_V);
+    vec3 specular = prefilteredColor * (F0 * brdf.x + brdf.y);
+
+    vec3 color = (kD * diffuse * ao + specular);
+
+    color += g2l(texture(BNB_SAMPLER_2D(emissive), var_uv).xyz);
+
+    bnb_FragColor = vec4(l2g(color), opacity);
+}
+#include <bnb/glsl.vert>
+#include <bnb/matrix_operations.glsl>
+#include <bnb/decode_int1010102.glsl>
+
+layout(location = 0) in vec3 attrib_pos;
+#if defined(BNB_VK_1)
+layout(location = 1) in uint attrib_n;
+layout(location = 2) in uint attrib_t;
+#else
+layout(location = 1) in vec4 attrib_n;
+layout(location = 2) in vec4 attrib_t;
+#endif
+layout(location = 3) in vec2 attrib_uv;
+layout(location = 4) in uvec4 attrib_bones;
+layout(location = 5) in vec4 attrib_weights;
+
+BNB_DECLARE_SAMPLER_2D(10, 11, bnb_BONES);
+
+BNB_OUT(0)
+vec2 var_uv;
+BNB_OUT(1)
+vec3 var_t;
+BNB_OUT(2)
+vec3 var_b;
+BNB_OUT(3)
+vec3 var_n;
+BNB_OUT(4)
+vec3 var_v;
+
+#include <bnb/anim_transform.glsl>
+
+void main()
+{
+    mat4 m = bnb_get_transform();
+    vec3 vpos = (vec4(attrib_pos, 1.) * m).xyz;
+
+    gl_Position = bnb_MVP * vec4(vpos, 1.);
+
+    var_uv = attrib_uv;
+
+    mat3 mv0_3 = mat3(bnb_MV[0].xyz, bnb_MV[1].xyz, bnb_MV[2].xyz);
+    mat3 m_3 = mat3(m[0].xyz, m[1].xyz, m[2].xyz);
+
+    vec4 attrib_t1 = decode_int1010102(attrib_t);
+    vec4 attrib_n1 = decode_int1010102(attrib_n);
+
+    var_t = normalize(mv0_3 * (attrib_t1.xyz * m_3));
+    var_n = normalize(mv0_3 * (attrib_n1.xyz * m_3));
+    var_b = attrib_t1.w * cross(var_n, var_t);
+    var_v = (bnb_MV * vec4(vpos, 1.)).xyz;
+}
+#include <bnb/glsl.frag>
+
+precision mediump float;
+precision mediump sampler2DArray;
+precision mediump sampler2DShadow;
+
+BNB_IN(0)
+vec2 var_uv;
+BNB_IN(1)
+vec3 var_t;
+BNB_IN(2)
+vec3 var_b;
+BNB_IN(3)
+vec3 var_n;
+BNB_IN(4)
+vec3 var_v;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, diffuse);
+BNB_DECLARE_SAMPLER_2D(2, 3, spec_gloss);
+BNB_DECLARE_SAMPLER_2D(4, 5, normal);
+BNB_DECLARE_SAMPLER_CUBE(6, 7, tex_ibl_diff);
+BNB_DECLARE_SAMPLER_CUBE(8, 9, tex_ibl_spec);
+BNB_DECLARE_SAMPLER_2D(12, 13, emissive);
+
+// gamma to linear
+vec3 g2l(vec3 g)
+{
+    return g * (g * (g * 0.305306011 + 0.682171111) + 0.012522878);
+}
+
+// combined hdr to ldr and linear to gamma
+vec3 l2g(vec3 l)
+{
+    return sqrt(1.33 * (1. - exp(-l))) - 0.03;
+}
+
+vec3 fresnel_schlick_roughness(float prod, vec3 F0, float roughness)
+{
+    return F0 + (max(F0, 1. - roughness) - F0) * pow(1. - prod, 5.);
+}
+
+vec2 brdf_approx(float Roughness, float NoV)
+{
+    const vec4 c0 = vec4(-1., -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1., 0.0425, 1.04, -0.04);
+    vec4 r = Roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+    return AB;
+}
+
+void main()
+{
+    vec4 diffuse_opacity = texture(BNB_SAMPLER_2D(diffuse), var_uv);
+
+    vec3 diffuse_color = g2l(diffuse_opacity.xyz);
+    float opacity = diffuse_opacity.w;
+
+    vec4 specular_glossiness = texture(BNB_SAMPLER_2D(spec_gloss), var_uv);
+    vec3 F0 = g2l(specular_glossiness.xyz);
+
+    float roughness = 1. - specular_glossiness.w;
+
+    vec3 N = normalize(mat3(var_t, var_b, var_n) * (texture(BNB_SAMPLER_2D(normal), var_uv).xyz * 2. - 1.));
+    N *= gl_FrontFacing ? 1. : -1.;
+
+    vec3 V = normalize(-var_v);
+    float cN_V = max(0., dot(N, V));
+    vec3 R = reflect(-V, N);
+
+    vec3 F = fresnel_schlick_roughness(cN_V, F0, roughness);
+    vec3 kD = 1. - F;
+
+    vec3 diffuse_lighting = texture(BNB_SAMPLER_CUBE(tex_ibl_diff), N).xyz * diffuse_color;
+
+    const float MAX_REFLECTION_LOD = 7.; // number of mip levels in tex_ibl_spec
+    vec3 prefilteredColor = textureLod(BNB_SAMPLER_CUBE(tex_ibl_spec), R, roughness * MAX_REFLECTION_LOD).xyz;
+    vec2 brdf = brdf_approx(roughness, cN_V);
+    vec3 specular = prefilteredColor * (F0 * brdf.x + brdf.y);
+
+    vec3 color = (kD * diffuse_lighting + specular);
+
+    color += g2l(texture(BNB_SAMPLER_2D(emissive), var_uv).xyz);
+
+    bnb_FragColor = vec4(l2g(color), opacity);
+}
+#include <bnb/glsl.vert>
+#include <bnb/matrix_operations.glsl>
+#include <bnb/decode_int1010102.glsl>
+
+layout(location = 0) in vec3 attrib_pos;
+#if defined(BNB_VK_1)
+layout(location = 1) in uint attrib_n;
+layout(location = 2) in uint attrib_t;
+#else
+layout(location = 1) in vec4 attrib_n;
+layout(location = 2) in vec4 attrib_t;
+#endif
+layout(location = 3) in vec2 attrib_uv;
+layout(location = 4) in uvec4 attrib_bones;
+layout(location = 5) in vec4 attrib_weights;
+
+BNB_DECLARE_SAMPLER_2D(10, 11, bnb_BONES);
+
+BNB_OUT(0)
+vec2 var_uv;
+BNB_OUT(1)
+vec3 var_t;
+BNB_OUT(2)
+vec3 var_b;
+BNB_OUT(3)
+vec3 var_n;
+BNB_OUT(4)
+vec3 var_v;
+
+#include <bnb/anim_transform.glsl>
+
+void main()
+{
+    mat4 m = bnb_get_transform();
+    vec3 vpos = (vec4(attrib_pos, 1.) * m).xyz;
+
+    gl_Position = bnb_MVP * vec4(vpos, 1.);
+
+    var_uv = attrib_uv;
+
+    mat3 mv0_3 = mat3(bnb_MV[0].xyz, bnb_MV[1].xyz, bnb_MV[2].xyz);
+    mat3 m_3 = mat3(m[0].xyz, m[1].xyz, m[2].xyz);
+
+    vec4 attrib_t1 = decode_int1010102(attrib_t);
+    vec4 attrib_n1 = decode_int1010102(attrib_n);
+
+    var_t = normalize(mv0_3 * (attrib_t1.xyz * m_3));
+    var_n = normalize(mv0_3 * (attrib_n1.xyz * m_3));
+    var_b = attrib_t1.w * cross(var_n, var_t);
+    var_v = (bnb_MV * vec4(vpos, 1.)).xyz;
+}
+#include <bnb/glsl.frag>
+
+precision mediump float;
+precision mediump sampler2DArray;
+precision mediump sampler2DShadow;
+
+BNB_IN(0)
+vec4 var_uv;
+BNB_IN(1)
+vec3 var_t;
+BNB_IN(2)
+vec3 var_b;
+BNB_IN(3)
+vec3 var_n;
+BNB_IN(4)
+vec3 var_v;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, base_color);
+BNB_DECLARE_SAMPLER_2D(2, 3, metallic_roughness);
+BNB_DECLARE_SAMPLER_2D(4, 5, normal);
+BNB_DECLARE_SAMPLER_CUBE(6, 7, tex_ibl_diff);
+BNB_DECLARE_SAMPLER_CUBE(8, 9, tex_ibl_spec);
+BNB_DECLARE_SAMPLER_2D(12, 13, emissive);
+BNB_DECLARE_SAMPLER_2D(14, 15, transmissive);
+BNB_DECLARE_SAMPLER_2D(16, 17, background);
+
+// gamma to linear
+vec3 g2l(vec3 g)
+{
+    return g * (g * (g * 0.305306011 + 0.682171111) + 0.012522878);
+}
+
+// combined hdr to ldr and linear to gamma
+vec3 l2g(vec3 l)
+{
+    return sqrt(1.33 * (1. - exp(-l))) - 0.03;
+}
+
+vec3 fresnel_schlick_roughness(float prod, vec3 F0, float roughness)
+{
+    return F0 + (max(F0, 1. - roughness) - F0) * pow(1. - prod, 5.);
+}
+
+vec2 brdf_approx(float Roughness, float NoV)
+{
+    const vec4 c0 = vec4(-1., -0.0275, -0.572, 0.022);
+    const vec4 c1 = vec4(1., 0.0425, 1.04, -0.04);
+    vec4 r = Roughness * c0 + c1;
+    float a004 = min(r.x * r.x, exp2(-9.28 * NoV)) * r.x + r.y;
+    vec2 AB = vec2(-1.04, 1.04) * a004 + r.zw;
+    return AB;
+}
+
+void main()
+{
+    vec4 base_opacity = texture(BNB_SAMPLER_2D(base_color), var_uv.xy);
+
+    vec3 base = g2l(base_opacity.xyz);
+    float opacity = base_opacity.w;
+
+    vec3 mrao = texture(BNB_SAMPLER_2D(metallic_roughness), var_uv.xy).xyz;
+
+    float metallic = mrao.z;
+    float roughness = mrao.y;
+    float ao = mrao.x;
+
+    vec3 N = normalize(mat3(var_t, var_b, var_n) * (texture(BNB_SAMPLER_2D(normal), var_uv.xy).xyz * 2. - 1.));
+    N *= gl_FrontFacing ? 1. : -1.;
+
+    float transmission = texture(BNB_SAMPLER_2D(transmissive), var_uv.xy).x;
+
+    vec3 V = normalize(-var_v);
+    float cN_V = max(0., dot(N, V));
+    vec3 R = reflect(-V, N);
+
+    vec3 F0 = mix(vec3(0.04), base, metallic);
+
+    vec3 F = fresnel_schlick_roughness(cN_V, F0, roughness);
+    vec3 kD = (1. - F) * (1. - metallic);
+
+    vec3 diffuse = texture(BNB_SAMPLER_CUBE(tex_ibl_diff), N).xyz * base;
+
+    float bg_lod = log2(float(textureSize(BNB_SAMPLER_2D(background), 0).x)) * roughness;
+    vec3 transmission_color = base * g2l(textureLod(BNB_SAMPLER_2D(background), var_uv.zw, bg_lod).xyz);
+    diffuse = mix(diffuse, transmission_color, transmission);
+
+    const float MAX_REFLECTION_LOD = 7.; // number of mip levels in tex_ibl_spec
+    vec3 prefilteredColor = textureLod(BNB_SAMPLER_CUBE(tex_ibl_spec), R, roughness * MAX_REFLECTION_LOD).xyz;
+    vec2 brdf = brdf_approx(roughness, cN_V);
+    vec3 specular = prefilteredColor * (F0 * brdf.x + brdf.y);
+
+    vec3 color = (kD * diffuse * ao + specular);
+
+    color += g2l(texture(BNB_SAMPLER_2D(emissive), var_uv.xy).xyz);
+
+    bnb_FragColor = vec4(l2g(color), opacity);
+}
+#include <bnb/glsl.vert>
+#include <bnb/matrix_operations.glsl>
+#include <bnb/decode_int1010102.glsl>
+
+layout(location = 0) in vec3 attrib_pos;
+#if defined(BNB_VK_1)
+layout(location = 1) in uint attrib_n;
+layout(location = 2) in uint attrib_t;
+#else
+layout(location = 1) in vec4 attrib_n;
+layout(location = 2) in vec4 attrib_t;
+#endif
+layout(location = 3) in vec2 attrib_uv;
+layout(location = 4) in uvec4 attrib_bones;
+layout(location = 5) in vec4 attrib_weights;
+
+BNB_DECLARE_SAMPLER_2D(10, 11, bnb_BONES);
+
+BNB_OUT(0)
+vec4 var_uv;
+BNB_OUT(1)
+vec3 var_t;
+BNB_OUT(2)
+vec3 var_b;
+BNB_OUT(3)
+vec3 var_n;
+BNB_OUT(4)
+vec3 var_v;
+
+#include <bnb/anim_transform.glsl>
+
+void main()
+{
+    mat4 m = bnb_get_transform();
+    vec3 vpos = (vec4(attrib_pos, 1.) * m).xyz;
+
+    gl_Position = bnb_MVP * vec4(vpos, 1.);
+
+    vec2 bg_uv = (gl_Position.xy / gl_Position.w) * 0.5 + 0.5;
+#ifdef BNB_VK_1
+    bg_uv.y = 1. - bg_uv.y;
+#endif
+    var_uv = vec4(attrib_uv, bg_uv);
+
+    mat3 mv0_3 = mat3(bnb_MV[0].xyz, bnb_MV[1].xyz, bnb_MV[2].xyz);
+    mat3 m_3 = mat3(m[0].xyz, m[1].xyz, m[2].xyz);
+
+    vec4 attrib_t1 = decode_int1010102(attrib_t);
+    vec4 attrib_n1 = decode_int1010102(attrib_n);
+
+    var_t = normalize(mv0_3 * (attrib_t1.xyz * m_3));
+    var_n = normalize(mv0_3 * (attrib_n1.xyz * m_3));
+    var_b = attrib_t1.w * cross(var_n, var_t);
+    var_v = (bnb_MV * vec4(vpos, 1.)).xyz;
+}
+#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec2 var_uv;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s);
+
+void main()
+{
+    float THRESHOLD = light_streak_threshold.x;
+    vec3 c = textureLod(BNB_SAMPLER_2D(s), var_uv, 0.).xyz;
+    float intensity = dot(c, vec3(0.299, 0.587, 0.114));
+    bnb_FragColor = vec4(intensity * step(THRESHOLD, intensity));
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+#ifdef BNB_VK_1
+    var_uv.y = 1. - var_uv.y;
+#endif
+}#include <bnb/glsl.frag>
+
+centroid BNB_IN(0) vec2 var_c;
+
+void main()
+{
+    bnb_FragColor = vec4(var_c, 0., 0.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+#if defined(BNB_VK_1)
+layout(location = 1) in uint attrib_n;
+layout(location = 2) in uint attrib_t;
+#else
+layout(location = 1) in vec4 attrib_n;
+layout(location = 2) in vec4 attrib_t;
+#endif
+layout(location = 3) in vec2 attrib_uv;
+layout(location = 4) in uvec4 attrib_bones;
+layout(location = 5) in vec4 attrib_weights;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, bnb_UVMORPH);
+BNB_DECLARE_SAMPLER_2D(2, 3, bnb_STATICPOS);
+
+centroid BNB_OUT(0) vec2 var_c;
+
+void main()
+{
+    const int EXPAND_PASSES = 8;
+    const float NPUSH = 75.;
+
+    int i = int(gl_InstanceID);
+
+    float scale = 1. - float(i) / float(EXPAND_PASSES + 1);
+    scale = scale * scale * (3. - 2. * scale); // smoothstep fall-off
+    float d0 = float(i) / float(EXPAND_PASSES + 1);
+    float d1 = float(i + 1) / float(EXPAND_PASSES + 1);
+#ifndef BNB_VK_1
+    vec4 npush_scale = vec4(NPUSH * float(i) / float(EXPAND_PASSES), scale * 0.5 * MORPH_WEIGHT, d1 - d0, d0 + d1 - 1.);
+#else
+    vec4 npush_scale = vec4(NPUSH * float(i) / float(EXPAND_PASSES), scale * 0.5 * MORPH_WEIGHT, (d1 - d0) * 0.5, (d0 + d1) * 0.5);
+#endif
+    const float max_range = 40.;
+    vec3 translation = textureLod(BNB_SAMPLER_2D(bnb_UVMORPH), smoothstep(0., 1., attrib_uv), 0.).xyz * (2. * max_range) - max_range;
+    vec3 vpos = attrib_pos + translation;
+
+    gl_Position = bnb_MVP * vec4(vpos * (1. + npush_scale.x / length(vpos)), 1.);
+    gl_Position.z = gl_Position.z * npush_scale.z + gl_Position.w * npush_scale.w;
+
+    vec4 pos_no_push = bnb_MVP * vec4(vpos, 1.);
+    vec2 uv = attrib_uv;
+#ifndef BNB_VK_1
+    uv.y = 1.0 - uv.y;
+#endif
+    vec3 static_pos = textureLod(BNB_SAMPLER_2D(bnb_STATICPOS), uv, 0.).xyz;
+    vec4 original_pos = bnb_MVP * vec4(static_pos + translation, 1.);
+    var_c = npush_scale.y * (original_pos.xy / original_pos.w - pos_no_push.xy / pos_no_push.w);
+}#include <bnb/glsl.frag>
+
+BNB_DECLARE_SAMPLER_2D(0, 1, tex_warp);
+BNB_DECLARE_SAMPLER_2D(2, 3, tex_frame);
+
+BNB_IN(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 o = textureLod(BNB_SAMPLER_2D(tex_warp), var_uv, 0.).xy;
+#if defined(BNB_VK_1)
+    o = vec2(o.x, -o.y);
+#endif
+    bnb_FragColor = textureLod(BNB_SAMPLER_2D(tex_frame), var_uv + o, 0.);
+}
+#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_v;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, tex_warp);
+
+BNB_OUT(0)
+vec2 var_uv;
+
+void main()
+{
+    vec2 v = attrib_v * 0.5 + 0.5;
+
+#if defined(BNB_VK_1)
+    const float bottom_coord = 1.;
+    const float top_coord = 0.;
+#else
+    const float bottom_coord = 0.;
+    const float top_coord = 1.;
+#endif
+
+    float bottom_margin = 0.;
+    bottom_margin = max(bottom_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.25, bottom_coord), 0.).y);
+    bottom_margin = max(bottom_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.50, bottom_coord), 0.).y);
+    bottom_margin = max(bottom_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.75, bottom_coord), 0.).y);
+
+    float top_margin = 0.;
+    top_margin = max(top_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.25, top_coord), 0.).y);
+    top_margin = max(top_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.50, top_coord), 0.).y);
+    top_margin = max(top_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0.75, top_coord), 0.).y);
+
+    float left_margin = 0.;
+    left_margin = max(left_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0., 0.25), 0.).x);
+    left_margin = max(left_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0., 0.50), 0.).x);
+    left_margin = max(left_margin, -textureLod(BNB_SAMPLER_2D(tex_warp), vec2(0., 0.75), 0.).x);
+
+    float right_margin = 0.;
+    right_margin = max(right_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(1., 0.25), 0.).x);
+    right_margin = max(right_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(1., 0.50), 0.).x);
+    right_margin = max(right_margin, textureLod(BNB_SAMPLER_2D(tex_warp), vec2(1., 0.75), 0.).x);
+
+    float size_x = 1. - left_margin - right_margin;
+    float size_y = 1. - bottom_margin - top_margin;
+
+    float scale;
+    if (size_x > size_y) {
+        scale = 1. / size_y;
+        left_margin += (size_x - size_y) * 0.5;
+    } else {
+        scale = 1. / size_x;
+        bottom_margin += (size_y - size_x) * 0.5;
+    }
+    gl_Position = vec4((v - vec2(left_margin, bottom_margin)) * scale * 2. - 1., 0., 1.);
+
+    var_uv = v;
+#if defined(BNB_VK_1)
+    var_uv.y = 1. - var_uv.y;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec2 var_uv;
+BNB_IN(1)
+vec2 var_draw_id;
+
+// kernel: 0.028532	0.067234	0.124009	0.179044	0.20236	0.179044	0.124009	0.067234	0.028532
+const float s0 = 0.20236;
+const float s1 = 0.124009 + 0.179044;
+const float s2 = 0.028532 + 0.067234;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_color_source);
+
+void main()
+{
+    int d = int(var_draw_id.x);
+
+    float inv_sz = 1. / bnb_MORPH_BLUR_PASS_HEIGHT;
+
+    if (d == 0) {
+        inv_sz *= bnb_SCREEN.y / bnb_SCREEN.x;
+    }
+
+    float o1 = inv_sz * (1. + 0.179044 / s1);
+    float o2 = inv_sz * (3. + 0.067234 / s2);
+
+    vec2 uv1p = var_uv;
+    vec2 uv1m = var_uv;
+
+    vec2 uv2p = var_uv;
+    vec2 uv2m = var_uv;
+
+    if (d == 0) {
+        uv1p[0] += o1;
+        uv1m[0] -= o1;
+        uv2p[0] += o2;
+        uv2m[0] -= o2;
+    } else {
+        uv1p[1] += o1;
+        uv1m[1] -= o1;
+        uv2p[1] += o2;
+        uv2m[1] -= o2;
+    }
+
+    vec2 o_blurred = s0 * textureLod(BNB_SAMPLER_2D(s_color_source), var_uv, 0.).xy
+                     + s1 * (textureLod(BNB_SAMPLER_2D(s_color_source), uv1p, 0.).xy + textureLod(BNB_SAMPLER_2D(s_color_source), uv1m, 0.).xy)
+                     + s2 * (textureLod(BNB_SAMPLER_2D(s_color_source), uv2p, 0.).xy + textureLod(BNB_SAMPLER_2D(s_color_source), uv2m, 0.).xy);
+
+    bnb_FragColor = vec4(o_blurred, 0, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_v;
+
+BNB_OUT(0)
+vec2 var_uv;
+BNB_OUT(1)
+vec2 var_draw_id;
+void main()
+{
+    vec2 v = attrib_v;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+    var_draw_id = vec2(float(fxr_DrawID), 0.);
+#if defined(BNB_VK_1)
+    var_uv.y = 1. - var_uv.y;
+#endif
+}#include <bnb/glsl.frag>
+#include <bnb/lut.glsl>
+
+BNB_IN(0)
+vec3 maskColor;
+BNB_IN(1)
+vec4 var_uv_bg_uv;
+
+BNB_DECLARE_SAMPLER_LUT(0, 1, lookupTexTeeth);
+BNB_DECLARE_SAMPLER_LUT(2, 3, lookupTexEyes);
+
+BNB_DECLARE_SAMPLER_2D(4, 5, tex_softLight);
+BNB_DECLARE_SAMPLER_2D(6, 7, tex_normalMakeup);
+BNB_DECLARE_SAMPLER_2D(8, 9, bnb_BACKGROUND);
+
+
+vec3 whitening(vec3 originalColor, float factor, BNB_DECLARE_SAMPLER_LUT_ARGUMENT(lookup))
+{
+    vec3 color = BNB_TEXTURE_LUT(originalColor, BNB_PASS_SAMPLER_ARGUMENT(lookup));
+    return mix(originalColor, originalColor, factor);
+}
+
+
+vec3 sharpen(vec3 originalColor, float factor)
+{
+    const float dx = 1.0 / 960.0;
+    const float dy = 1.0 / 1280.0;
+
+    vec3 total = 5.0 * originalColor
+                 - textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z - dx, var_uv_bg_uv.w - dy), 0.).xyz
+                 - textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z + dx, var_uv_bg_uv.w - dy), 0.).xyz
+                 - textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z - dx, var_uv_bg_uv.w + dy), 0.).xyz
+                 - textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z + dx, var_uv_bg_uv.w + dy), 0.).xyz;
+
+    vec3 result = mix(originalColor, total, factor);
+    return clamp(result, 0.0, 1.0);
+}
+
+
+vec3 softSkin(vec3 originalColor, float factor)
+{
+    vec3 screenColor = originalColor;
+
+    const float dx = 4.5 / 960.0;
+    const float dy = 4.5 / 1280.0;
+
+    vec3 nextColor0 = textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z - dx, var_uv_bg_uv.w - dy), 0.).xyz;
+    vec3 nextColor1 = textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z + dx, var_uv_bg_uv.w - dy), 0.).xyz;
+    vec3 nextColor2 = textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z - dx, var_uv_bg_uv.w + dy), 0.).xyz;
+    vec3 nextColor3 = textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), vec2(var_uv_bg_uv.z + dx, var_uv_bg_uv.w + dy), 0.).xyz;
+
+    float intensity = screenColor.g;
+    vec4 nextIntensity = vec4(nextColor0.g, nextColor1.g, nextColor2.g, nextColor3.g);
+    vec4 lg = nextIntensity - intensity;
+
+    vec4 curr = max(0.367 - abs(lg * (0.367 * 0.6 / (1.41 * psi.x))), 0.);
+
+    float summ = 1.0 + curr.x + curr.y + curr.z + curr.w;
+    screenColor += (nextColor0 * curr.x + nextColor1 * curr.y + nextColor2 * curr.z + nextColor3 * curr.w);
+    screenColor = screenColor * (factor / summ);
+
+    screenColor = originalColor * (1. - factor) + screenColor;
+    return screenColor;
+}
+
+
+float softlight_blend_1ch(float a, float b)
+{
+    return ((1. - 2. * b) * a + 2. * b) * a;
+}
+
+
+vec3 blendSoftLight(vec3 base, vec3 blend)
+{
+    return vec3(softlight_blend_1ch(base.r, blend.r), softlight_blend_1ch(base.g, blend.g), softlight_blend_1ch(base.b, blend.b));
+}
+
+
+void main()
+{
+    vec3 res = textureLod(BNB_SAMPLER_2D(bnb_BACKGROUND), var_uv_bg_uv.zw, 0.).xyz;
+    res = softSkin(res, maskColor.r * skin_soft.x);
+
+    if (maskColor.g > 1. / 255.) {
+        float sharp_factor = maskColor.g * teeth_sharpen.x;
+        res = sharpen(res, sharp_factor);
+        float teeth_factor = maskColor.g;
+        res = whitening(res, teeth_factor, BNB_PASS_SAMPLER_ARGUMENT(lookupTexTeeth));
+    }
+
+    res = sharpen(res, maskColor.b * eyes_sharpen.x);
+    res = whitening(res, maskColor.b * eyes_whitening.x, BNB_PASS_SAMPLER_ARGUMENT(lookupTexEyes));
+    // vec2 uvh = vec2(abs(2.0 * (var_uv_bg_uv.x - 0.5)), var_uv_bg_uv.y);
+    res.xyz = blendSoftLight(res.xyz, texture(BNB_SAMPLER_2D(tex_softLight), var_uv_bg_uv.xy).xyz);
+    vec4 makeup2 = texture(BNB_SAMPLER_2D(tex_normalMakeup), var_uv_bg_uv.xy);
+    res.xyz = mix(res.xyz, makeup2.xyz, makeup2.w);
+
+    bnb_FragColor = vec4(res, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+layout(location = 1) in vec3 attrib_pos_static;
+layout(location = 2) in vec2 attrib_uv;
+layout(location = 3) in vec4 attrib_red_mask;
+
+BNB_OUT(0)
+vec3 maskColor;
+BNB_OUT(1)
+vec4 var_uv_bg_uv;
+
+invariant gl_Position;
+
+void main()
+{
+    gl_Position = bnb_MVP * vec4(attrib_pos, 1.);
+    maskColor = attrib_red_mask.xyz;
+    vec2 bg_uv = (gl_Position.xy / gl_Position.w) * 0.5 + 0.5;
+    var_uv_bg_uv = vec4(attrib_uv, bg_uv);
+
+#ifdef BNB_VK_1
+    var_uv_bg_uv.w = 1. - var_uv_bg_uv.w;
+#endif
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec3 pos_static;
+
+void main()
+{
+    bnb_FragColor = vec4(pos_static, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+layout(location = 1) in vec2 attrib_uv;
+
+BNB_OUT(0)
+vec3 pos_static;
+
+void main()
+{
+    vec2 v = attrib_uv * 2. - 1.;
+    v.y = -v.y;
+    gl_Position = vec4(v, 0., 1.);
+    pos_static = attrib_pos;
+}#include <bnb/glsl.frag>
+
+BNB_IN(0)
+vec3 translation;
+
+void main()
+{
+    bnb_FragColor = vec4(translation, 1.);
+}#include <bnb/glsl.vert>
+
+layout(location = 0) in vec3 attrib_pos;
+layout(location = 1) in vec3 attrib_static_pos;
+layout(location = 2) in vec2 attrib_uv;
+layout(location = 3) in vec4 attrib_mask;
+
+BNB_OUT(0)
+vec3 translation;
+
+void main()
+{
+    vec2 v = smoothstep(0., 1., attrib_uv) * 2. - 1.;
+    gl_Position = vec4(v, 0., 1.);
+    const float max_range = 40.; // morph translation will be clamped to [-max_range,+max_range]
+    translation = ((attrib_pos - attrib_static_pos) / max_range) * 0.5 + 0.5;
+}#include <bnb/glsl.frag>
+
+#include <bnb/texture_bicubic.glsl>
+
+
+BNB_IN(0)
+vec2 var_uv;
+BNB_IN(1)
+vec2 var_bg_uv;
+
+BNB_DECLARE_SAMPLER_2D(0, 1, s_bg_texture);
+BNB_DECLARE_SAMPLER_2D(2, 3, s_src_texture);
+
+void main()
+{
+    vec4 bg_color_mask = textureLod(BNB_SAMPLER_2D(s_src_texture), var_uv, 0.);
+    vec3 bg_color = bg_color_mask.rgb;
+    float mask = 1. - bg_color_mask.a;
+    vec2 uv = var_bg_uv;
+
+    vec2 uv_coeff = step(vec2(0.0, 0.0), uv) - step(vec2(1., 1.), uv);
+
+    vec4 bg_tex_color = texture(BNB_SAMPLER_2D(s_bg_texture), uv);
+    bg_tex_color.rgb *= uv_coeff.x * uv_coeff.y;
+
+    float complete_mask = clamp(mask - (1. - bg_tex_color.a), 0., 1.);
+
+    bnb_FragColor = vec4(
+        mix(bg_color, bg_tex_color.rgb, complete_mask),
+        clamp(vbg_tex_size_a.w * bg_tex_color.a, (1. - complete_mask), 1.)
+    );
+}
+#include <bnb/glsl.vert>
+
+layout(location = 0) in vec2 attrib_pos;
+
+BNB_OUT(0)
+vec2 var_uv;
+BNB_OUT(1)
+vec2 var_bg_uv;
+
+#include <bnb/transform_uv.glsl>
+
+void main()
+{
+    vec2 v = attrib_pos;
+    gl_Position = vec4(v, 0., 1.);
+    var_uv = v * 0.5 + 0.5;
+    var_bg_uv = var_uv;
+
+#ifdef BNB_VK_1
+    var_uv.y = 1. - var_uv.y;
+    var_bg_uv.y = 1. - var_bg_uv.y;
+#endif
+
+    vec2 bg_tex_size = vbg_tex_size_a.xy;
+
+    if (vbg_tex_size_a.x < 1.0 || vbg_tex_size_a.y < 1.0) {
+        bg_tex_size = bnb_SCREEN.xy;
+    }
+
+    float background_rotation_angle = 0.;
+    background_rotation_angle += vbg_scale_rot_mode.z;
+
+    float degrees_to_radians = 0.017453292;
+#ifdef BNB_VK_1
+    degrees_to_radians *= -1.0;
+#endif
+
+    var_bg_uv = bnb_rotate_uv(var_bg_uv, degrees_to_radians * (background_rotation_angle));
+    var_bg_uv = bnb_scale_uv(var_bg_uv, vbg_scale_rot_mode.xy);
+    var_bg_uv = bnb_contain_uv(var_bg_uv, bg_tex_size, vbg_scale_rot_mode.w, background_rotation_angle);
+
+#ifndef BNB_VK_1
+    var_bg_uv.y = 1. - var_bg_uv.y;
+#endif
+}
+#ifndef BNB_LUT_GLSL
+#define BNB_LUT_GLSL
+
+/**
+ * Following defines
+ * `vec4 BNB_TEXTURE_LUT(vec4 original_color, BNB_DECLARE_SAMPLER_LUT_ARGUMENT(lookup_texture))`,
+ * Where `lookup_texture` defined as
+ * `BNB_DECLARE_SAMPLER_LUT(x, y) lookup_texture;`.
+ * You can apply this LUT using following code:
+ * `vec4 res = BNB_TEXTURE_LUT(original_color, BNB_PASS_SAMPLER_ARGUMENT(lookup_texture));`.
+ * `vec3` overload is also present.
+ */
+#define BNB_DECLARE_SAMPLER_LUT(binding_index_1, binding_index_2, sampler_name) BNB_DECLARE_SAMPLER_3D(binding_index_1, binding_index_2, sampler_name)
+#define BNB_DECLARE_SAMPLER_LUT_ARGUMENT(lookup_texture) BNB_DECLARE_SAMPLER_3D_ARGUMENT(lookup_texture)
+#define BNB_TEXTURE_LUT bnb_texture_3d_lookup_512
+#define BNB_TEXTURE_LUT_SMALL bnb_texture_3d_lookup_16
+#define BNB_TEXTURE_LUT_LOD BNB_TEXTURE_3D_LOD
+
+#define BNB_SAMPLER_LUT BNB_PASS_SAMPLER_ARGUMENT
+
+/**
+ * Appply LUT to `original_color`. `lookup_texture` must be square 512x512
+ * 2D texture.
+ * https://docs.unrealengine.com/en-US/RenderingAndGraphics/PostProcessEffects/UsingLUTs/index.html
+ * Prefer `BNB_TEXTURE_LUT` instead of this call.
+ */
+vec4 bnb_texture_lookup_512(
+    vec4 original_color,
+    BNB_DECLARE_SAMPLER_2D_ARGUMENT(lookup_texture)
+)
+{
+    const float epsilon = 0.000001;
+    const float lut_size = 512.0;
+
+    float blue_value = (original_color.b * 255.0) / 4.0;
+
+    vec2 mul_b = clamp(floor(blue_value) + vec2(0.0, 1.0), 0.0, 63.0);
+    vec2 row = floor(mul_b / 8.0 + epsilon);
+    vec4 row_col = vec4(row, mul_b - row * 8.0);
+    vec4 lookup = original_color.ggrr * (63.0 / lut_size)
+                  + row_col * (64.0 / lut_size) + (0.5 / lut_size);
+
+    float factor = blue_value - mul_b.x;
+
+    vec3 sampled1 = textureLod(
+                        BNB_SAMPLER_2D(lookup_texture),
+                        lookup.zx,
+                        0.
+    )
+                        .rgb;
+    vec3 sampled2 = textureLod(
+                        BNB_SAMPLER_2D(lookup_texture),
+                        lookup.wy,
+                        0.
+    )
+                        .rgb;
+
+    vec3 res = mix(sampled1, sampled2, factor);
+    return vec4(res, original_color.a);
+}
+
+vec3 bnb_texture_lookup_512(
+    vec3 original_color,
+    BNB_DECLARE_SAMPLER_2D_ARGUMENT(lookup_texture)
+)
+{
+    return bnb_texture_lookup_512(
+               vec4(original_color, 1.0),
+               BNB_PASS_SAMPLER_ARGUMENT(lookup_texture)
+    )
+        .rgb;
+}
+
+/**
+ * Appply LUT to `original_color`. `lookup_texture` must be 16x256
+ * 2D texture.
+ * https://docs.unrealengine.com/en-US/RenderingAndGraphics/PostProcessEffects/UsingLUTs/index.html
+ * Prefer `BNB_TEXTURE_LUT` instead of this call.
+ */
+vec4 bnb_texture_lookup_16x256(
+    vec4 original_color,
+    BNB_DECLARE_SAMPLER_2D_ARGUMENT(lookup_texture)
+)
+{
+    float blue_value = original_color.b * 15.;
+    float blue_plane = floor(blue_value);
+    float factor = blue_value - blue_plane;
+    vec2 uv = original_color.rg * vec2(15. / 16., 15. / 256.) + vec2(0.5 / 16., 0.5 / 256.);
+    uv.y += blue_plane / 16.;
+    vec3 sampled1 = textureLod(BNB_SAMPLER_2D(lookup_texture), uv, 0.).rgb;
+    uv.y += 1. / 16.;
+    vec3 sampled2 = textureLod(BNB_SAMPLER_2D(lookup_texture), uv, 0.).rgb;
+
+    vec3 res = mix(sampled1, sampled2, factor);
+    return vec4(res, original_color.a);
+}
+
+vec3 bnb_texture_lookup_16x256(
+    vec3 original_color,
+    BNB_DECLARE_SAMPLER_2D_ARGUMENT(lookup_texture)
+)
+{
+    return bnb_texture_lookup_16x256(vec4(original_color, 1.0), BNB_PASS_SAMPLER_ARGUMENT(lookup_texture)).rgb;
+}
+
+/**
+ * Prefer `BNB_TEXTURE_LUT` instead of this call.
+ */
+vec4 bnb_texture_3d_lookup_512(vec4 original_color, BNB_DECLARE_SAMPLER_3D_ARGUMENT(lookup_texture))
+{
+    return vec4(textureLod(BNB_SAMPLER_3D(lookup_texture), original_color.rgb * (63. / 64.) + 0.5 / 64., 0.).rgb, original_color.a);
+}
+
+vec3 bnb_texture_3d_lookup_512(vec3 original_color, BNB_DECLARE_SAMPLER_3D_ARGUMENT(lookup_texture))
+{
+    return textureLod(BNB_SAMPLER_3D(lookup_texture), original_color * (63. / 64.) + 0.5 / 64., 0.).rgb;
+}
+
+vec4 bnb_texture_3d_lookup_16(vec4 original_color, BNB_DECLARE_SAMPLER_3D_ARGUMENT(lookup_texture))
+{
+    return vec4(textureLod(BNB_SAMPLER_3D(lookup_texture), original_color.rgb * (15. / 16.) + 0.5 / 16., 0.).rgb, original_color.a);
+}
+
+vec3 bnb_texture_3d_lookup_16(vec3 original_color, BNB_DECLARE_SAMPLER_3D_ARGUMENT(lookup_texture))
+{
+    return textureLod(BNB_SAMPLER_3D(lookup_texture), original_color * (15. / 16.) + 0.5 / 16., 0.).rgb;
+}
+
+#endif // BNB_LUT_GLSL#ifndef BNB_MATRIX_OPERATIONS_GLSL
+#define BNB_MATRIX_OPERATIONS_GLSL
+
+mat3 bnb_inverse_trs2d(mat3 m)
+{
+    vec2 s = 1. / vec2(dot(vec2(m[0].x, m[1].x), vec2(m[0].x, m[1].x)), dot(vec2(m[0].y, m[1].y), vec2(m[0].y, m[1].y)));
+    mat2 r = transpose(mat2(m[0].xy * s, m[1].xy * s));
+    vec2 t = -(vec2(m[0].z, m[1].z) * r);
+    return mat3(vec3(r[0], t.x), vec3(r[1], t.y), vec3(0., 0., 1.));
+}
+
+float bnb_mat2_as_vec4_determinant(vec4 m)
+{
+    return m.x * m.w - m.y * m.z;
+}
+
+#endif#ifndef BNB_MORPH_TRANSFORM_GLSL
+#define BNB_MORPH_TRANSFORM_GLSL
+
+#ifdef BNB_USE_AUTOMORPH
+vec2 bnb_morph_coord(vec3 v)
+{
+    const float half_angle = radians(104.);
+    const float y0 = -110.;
+    const float y1 = 112.;
+    float x = atan(v.x, v.z) / half_angle;
+    float y = ((v.y - y0) / (y1 - y0)) * 2. - 1.;
+    return vec2(x, y);
+}
+
+    #ifndef BNB_AUTOMORPH_BONE
+vec3 bnb_auto_morph(vec3 v)
+{
+    vec2 morph_uv = bnb_morph_coord(v) * 0.5 + 0.5;
+        #ifdef BNB_VK_1
+    morph_uv.y = 1. - morph_uv.y;
+        #endif
+    vec3 translation = textureLod(BNB_SAMPLER_2D(bnb_MORPH), morph_uv, 0.).xyz;
+    return v + translation;
+}
+    #else
+vec3 bnb_auto_morph_bone(vec3 v, mat4 m)
+{
+    vec2 morph_uv = bnb_morph_coord(vec3(m[0][3], m[1][3], m[2][3])) * 0.5 + 0.5;
+        #ifdef BNB_VK_1
+    morph_uv.y = 1. - morph_uv.y;
+        #endif
+    vec3 translation = textureLod(BNB_SAMPLER_2D(bnb_MORPH), morph_uv, 0.).xyz;
+    return v + translation;
+}
+    #endif // BNB_AUTOMORPH_BONE
+#endif     // BNB_USE_AUTOMORPH
+#endif     // BNB_MORPH_TRANSFORM_GLSL#ifndef BNB_QUAT_ROTATION
+#define BNB_QUAT_ROTATION
+
+vec3 bnb_quat_rotate(vec4 q, vec3 v)
+{
+    return v + 2. * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+float bnb_quat_to_side_euler(vec4 quat, float isMirroredCoeff, float initAngle)
+{
+    float angle = initAngle;
+    vec4 q = quat;
+
+    q.x = -q.x;
+    q.y = -q.y;
+
+    vec3 side = bnb_quat_rotate(q, vec3(1., 0., 0.));
+    vec3 up = bnb_quat_rotate(q, vec3(0., 1., 0.));
+
+    if (side.y > 0.7071 && bnb_SCREEN.x < bnb_SCREEN.y) {
+        angle += 90. * isMirroredCoeff;
+    } else if (side.y < -0.7071 && bnb_SCREEN.x < bnb_SCREEN.y) {
+        angle += -90. * isMirroredCoeff;
+    } else if (up.y < -0.7071 && bnb_SCREEN.x < bnb_SCREEN.y) {
+        angle += 180.;
+    }
+
+    return angle;
+}
+
+vec4 bnb_quat_mul(vec4 q0, vec4 q1)
+{
+    float A = (q0.w + q0.x) * (q1.w + q1.x);
+    float C = (q0.w - q0.x) * (q1.y + q1.z);
+    float D = (q0.y + q0.z) * (q1.w - q1.x);
+    float B = (q0.z - q0.y) * (q1.y - q1.z);
+    float E = (q0.x + q0.z) * (q1.x + q1.y) * 0.5;
+    float F = (q0.x - q0.z) * (q1.x - q1.y) * 0.5;
+    float G = (q0.w + q0.y) * (q1.w - q1.z) * 0.5;
+    float H = (q0.y - q0.w) * (q1.w + q1.z) * 0.5;
+    return vec4(
+        A - E + H - (F + G),
+        C - F + E + (G + H),
+        D - G + E - (F + H),
+        B - H + G - (F + E)
+    );
+}
+
+vec4 bnb_quat_conjugate(vec4 q)
+{
+    return vec4(-q.x, -q.y, -q.z, q.w);
+}
+
+#endif#ifndef BNB_SAMPLE_CAMERA_GLSL
+#define BNB_SAMPLE_CAMERA_GLSL
+
+vec4 bnb_sample_camera(vec2 uv)
+{
+    vec4 result;
+    if (bnb_rgba_camera.x < 0.5) {
+        float Y = textureLod(BNB_SAMPLER_2D(tex_y), uv, 0.).x;
+
+        if (bnb_camera_scale_i420.y < 0.5) {
+            vec2 UV = textureLod(BNB_SAMPLER_2D(tex_uv), uv, 0.).xy;
+            result = vec4(Y, UV.x, UV.y, 1.) * bnb_conversion_matrix;
+        } else {
+            float U = textureLod(BNB_SAMPLER_2D(tex_u), uv, 0.).x;
+            float V = textureLod(BNB_SAMPLER_2D(tex_v), uv, 0.).x;
+
+            result = vec4(Y, U, V, 1.) * bnb_conversion_matrix;
+        }
+    } else {
+        result = textureLod(BNB_SAMPLER_2D(tex_rgb), uv, 0.);
+        if (bnb_rgba_camera.z > 0.5) {
+            result = result.bgra; // BGRA
+        } else if (bnb_rgba_camera.w > 0.5) {
+            result = result.gbar; // ARGB
+        }
+    }
+    return result;
+}
+
+#endif // BNB_SAMPLE_CAMERA_GLSL#ifndef BNB_SAMPLERS_DECLARATION_GLSL
+#define BNB_SAMPLERS_DECLARATION_GLSL
+
+
+// clang-format off
+
+#ifdef BNB_VK_1
+    #define BNB_DECLARE_SAMPLER_2D(binding_index_1, binding_index_2, sampler_name) layout(set = 1, binding = binding_index_1) uniform texture2D texture_##sampler_name;layout(set = 1, binding = binding_index_2) uniform sampler sampler_##sampler_name
+
+    #define BNB_DECLARE_SAMPLER_2D_ARRAY(binding_index_1, binding_index_2, sampler_name) layout(set = 1, binding = binding_index_1) uniform texture2DArray texture_##sampler_name; layout(set = 1, binding = binding_index_2) uniform sampler sampler_##sampler_name
+
+    #define BNB_DECLARE_SAMPLER_CUBE(binding_index_1, binding_index_2, sampler_name) layout(set = 1, binding = binding_index_1) uniform textureCube texture_##sampler_name;layout(set = 1, binding = binding_index_2) uniform sampler sampler_##sampler_name
+
+    #define BNB_DECLARE_SAMPLER_3D(binding_index_1, binding_index_2, sampler_name) layout(set = 1, binding = binding_index_1) uniform texture3D texture_##sampler_name; layout(set = 1, binding = binding_index_2) uniform sampler sampler_##sampler_name
+
+    #define BNB_DECLARE_SAMPLER_2D_ARGUMENT(arg_name) texture2D texture_##arg_name, sampler sampler_##arg_name
+    #define BNB_DECLARE_SAMPLER_2D_ARRAY_ARGUMENT(arg_name) texture2DArray texture_##arg_name, sampler sampler_##arg_name
+    #define BNB_DECLARE_SAMPLER_CUBE_ARGUMENT(arg_name) textureCube texture_##arg_name, sampler sampler_##arg_name
+    #define BNB_DECLARE_SAMPLER_3D_ARGUMENT(arg_name) texture3D texture_##arg_name, sampler sampler_##arg_name
+
+    #define BNB_PASS_SAMPLER_ARGUMENT(arg_name) texture_##arg_name, sampler_##arg_name
+
+#else
+    #define BNB_DECLARE_SAMPLER_2D(binding_index_1, binding_index_2, sampler_name) uniform sampler2D sampler_name
+    #define BNB_DECLARE_SAMPLER_2D_ARRAY(binding_index_1, binding_index_2, sampler_name) uniform sampler2DArray sampler_name
+    #define BNB_DECLARE_SAMPLER_CUBE(binding_index_1, binding_index_2, sampler_name) uniform samplerCube sampler_name
+    #define BNB_DECLARE_SAMPLER_3D(binding_index_1, binding_index_2, sampler_name) uniform sampler3D sampler_name
+
+    #define BNB_DECLARE_SAMPLER_2D_ARGUMENT(arg_name) sampler2D arg_name
+    #define BNB_DECLARE_SAMPLER_2D_ARRAY_ARGUMENT(arg_name) sampler2DArray arg_name
+    #define BNB_DECLARE_SAMPLER_CUBE_ARGUMENT(arg_name) samplerCube arg_name
+    #define BNB_DECLARE_SAMPLER_3D_ARGUMENT(arg_name) sampler3D arg_name
+
+    #define BNB_PASS_SAMPLER_ARGUMENT(arg_name) arg_name
+#endif
+
+#define BNB_DECLARE_SAMPLER_VIDEO(binding_index_1, binding_index_2, sampler_name) BNB_DECLARE_SAMPLER_2D(binding_index_1, binding_index_2, sampler_name)
+
+// clang-format on
+
+#endif // BNB_SAMPLERS_DECLARATION_GLSL#ifndef BNB_TEXTURE_BICUBIC_GLSL
+#define BNB_TEXTURE_BICUBIC_GLSL
+
+#include <bnb/textures_lookup.glsl>
+
+vec4 cubic(float v)
+{
+    vec4 n = vec4(1.0, 2.0, 3.0, 4.0) - v;
+    vec4 s = n * n * n;
+    float x = s.x;
+    float y = s.y - 4.0 * s.x;
+    float z = s.z - 4.0 * s.y + 6.0 * s.x;
+    float w = 6.0 - x - y - z;
+    return vec4(x, y, z, w) * (1.0 / 6.0);
+}
+
+vec4 bnb_texture_bicubic(BNB_DECLARE_SAMPLER_2D_ARGUMENT(tex), vec2 uv)
+{
+    vec2 tex_size = vec2(textureSize(BNB_SAMPLER_2D(tex), 0));
+    vec2 invtex_size = 1.0 / tex_size;
+
+    uv = uv * tex_size - 0.5;
+
+    vec2 fxy = fract(uv);
+    uv -= fxy;
+
+    vec4 xcubic = cubic(fxy.x);
+    vec4 ycubic = cubic(fxy.y);
+
+    vec4 c = uv.xxyy + vec2(-0.5, +1.5).xyxy;
+
+    vec4 s = vec4(xcubic.xz + xcubic.yw, ycubic.xz + ycubic.yw);
+    vec4 offset = c + vec4(xcubic.yw, ycubic.yw) / s;
+
+    offset *= invtex_size.xxyy;
+
+    vec4 sample0 = textureLod(BNB_SAMPLER_2D(tex), offset.xz, 0.);
+    vec4 sample1 = textureLod(BNB_SAMPLER_2D(tex), offset.yz, 0.);
+    vec4 sample2 = textureLod(BNB_SAMPLER_2D(tex), offset.xw, 0.);
+    vec4 sample3 = textureLod(BNB_SAMPLER_2D(tex), offset.yw, 0.);
+
+    float sx = s.x / (s.x + s.y);
+    float sy = s.z / (s.z + s.w);
+
+    return mix(
+        mix(sample3, sample2, sx),
+        mix(sample1, sample0, sx),
+        sy
+    );
+}
+
+#endif // BNB_TEXTURE_BICUBIC_GLSL
+#ifndef BNB_TEXTURES_LOOKUP_GLSL
+#define BNB_TEXTURES_LOOKUP_GLSL
+
+#define BNB_TEXTURE_2D(s, uv) texture(s, vec2(uv)) // NOTE: effect converter reqiure cast uv to vec2
+#define BNB_TEXTURE_2D_ARRAY texture
+#define BNB_TEXTURE_2D_LOD textureLod
+#define BNB_TEXEL_FETCH_2D texelFetch
+#define BNB_TEXTURE_CUBE texture
+#define BNB_TEXTURE_CUBE_LOD textureLod
+#define BNB_TEXTURE_3D texture
+#define BNB_TEXTURE_3D_LOD textureLod
+#define BNB_CENTROID centroid
+
+#if defined(BNB_GL_ES_3) || defined(BNB_GL)
+    #define BNB_SAMPLER_2D(sampler_name) sampler_name
+    #define BNB_SAMPLER_2D_ARRAY(sampler_name) sampler_name
+    #define BNB_SAMPLER_CUBE(sampler_name) sampler_name
+    #define BNB_SAMPLER_3D(sampler_name) sampler_name
+#elif defined(BNB_VK_1)
+    #define BNB_SAMPLER_2D(sampler_name) sampler2D(texture_##sampler_name, sampler_##sampler_name)
+    #define BNB_SAMPLER_2D_ARRAY(sampler_name) sampler2DArray(texture_##sampler_name, sampler_##sampler_name)
+    #define BNB_SAMPLER_CUBE(sampler_name) samplerCube(texture_##sampler_name, sampler_##sampler_name)
+    #define BNB_SAMPLER_3D(sampler_name) sampler3D(texture_##sampler_name, sampler_##sampler_name)
+#endif
+
+#endif // BNB_TEXTURES_LOOKUP_GLSL
+#ifndef BNB_TRANSFORM_UV
+#define BNB_TRANSFORM_UV
+// https://gist.github.com/ayamflow/c06bc0c8a64f985dd431bd0ac5b557cd
+vec2 bnb_rotate_uv(vec2 uv, float rotation)
+{
+    const float mid = 0.5;
+
+    return vec2(
+        cos(rotation) * (uv.x - mid) + sin(rotation) * (uv.y - mid) + mid,
+        cos(rotation) * (uv.y - mid) - sin(rotation) * (uv.x - mid) + mid
+    );
+}
+
+vec2 bnb_scale_uv(vec2 uv, vec2 scale)
+{
+    const float mid = 0.5;
+
+    scale = 1. / scale;
+
+    return (uv - mid) * scale + mid;
+}
+
+const float aspect_scale_to_fill = 0.;
+const float aspect_fill = 1.;
+const float aspect_fit = 2.;
+
+
+bool bnb_float_eq(float a, float b, float prec)
+{
+    if (sign(a) != sign(b)) {
+        return false;
+    }
+
+    return abs(sign(a) * a - sign(b) * b) < prec;
+}
+
+
+bool bnb_float_eq(float a, float b)
+{
+    return bnb_float_eq(a, b, 0.0001);
+}
+
+
+vec2 bnb_contain_uv(vec2 uv, vec2 tex_size, float content_mode, float angle)
+{
+    const float mid = 0.5;
+    float tex_aspect = tex_size.x / tex_size.y;
+    if (bnb_float_eq(angle, 90., 0.1) || bnb_float_eq(angle, -90., 0.1) || bnb_float_eq(angle, 270., 0.1) || bnb_float_eq(angle, -270., 0.1)) {
+        tex_aspect = tex_size.y / tex_size.x;
+    }
+
+    float screen_aspect = bnb_SCREEN.x / bnb_SCREEN.y;
+
+    float ratio = tex_aspect / screen_aspect;
+
+    float x = 1.;
+    float y = 1.;
+
+    if (bnb_float_eq(content_mode, aspect_fill, 0.1)) {
+        if (bnb_float_eq(angle, 90., 0.1) || bnb_float_eq(angle, -90., 0.1) || bnb_float_eq(angle, 270., 0.1) || bnb_float_eq(angle, -270., 0.1)) {
+            if (ratio > 1.) {
+                y /= ratio;
+            } else {
+                x *= ratio;
+            }
+        } else {
+            if (ratio > 1.)
+                x /= ratio;
+            else
+                y *= ratio;
+        }
+        // } else if (content_mode == aspect_scale_to_fill) {
+        // this is the default GL behaviuor, skip the `if` entirely
+    } else if (bnb_float_eq(content_mode, aspect_fit, 0.1)) {
+        if (bnb_float_eq(angle, 90., 0.1) || bnb_float_eq(angle, -90., 0.1) || bnb_float_eq(angle, 270., 0.1) || bnb_float_eq(angle, -270., 0.1)) {
+            if (ratio > 1.) {
+                x *= ratio;
+            } else {
+                y /= ratio;
+            }
+        } else {
+            if (ratio > 1.)
+                y *= ratio;
+            else
+                x /= ratio;
+        }
+    }
+
+    return vec2(x, y) * (uv - mid) + mid;
+}
+#endif#ifndef BNB_VERSION_GLSL
+#define BNB_VERSION_GLSL
+
+#ifdef GL_ES
+    #define BNB_GL_ES_3 1
+#else
+    #ifdef VULKAN
+        #define BNB_VK_1 1
+    #else
+        #define BNB_GL 1
+    #endif
+#endif
+
+#endif // BNB_VERSION_GLSL
+var Api = require('bnb_js/legacy.js')
+
+var effect;
+
+var world = {
+    landmarks: [],
+    latents: []
+};
+
+function configure(newEffect)
+{
+    effect = newEffect;
+    effect.init();
+}
+
+
+function onFRXUpdate(strLandmarks, strLatents)
+{
+    world.landmarks = strLandmarks ? strLandmarks : [];
+    world.latents = strLatents ? strLatents : [];
+
+    for (var i = 0; i < effect.faceActions.length; i++) {
+        effect.faceActions[i]();
+    }
+}
+
+function onUpdate()
+{
+    for (var i = 0; i < effect.noFaceActions.length; i++) {
+        effect.noFaceActions[i]();
+    }
+}
+
+function onVideoRecordStart()
+{
+    var i;
+    for (i = 0; i < effect.videoRecordStartActions.length; i++) {
+        effect.videoRecordStartActions[i]();
+    }
+}
+
+function onVideoRecordFinish()
+{
+    var i;
+    for (i = 0; i < effect.videoRecordFinishActions.length; i++) {
+        effect.videoRecordFinishActions[i]();
+    }
+}
+
+function onVideoRecordDiscard()
+{
+    var i;
+    for (i = 0; i < effect.videoRecordDiscardActions.length; i++) {
+        effect.videoRecordDiscardActions[i]();
+    }
+}
+
+
+isMouthOpen = Api.isMouthOpen;
+isSmile = Api.isSmile;
+isEyebrowUp = Api.isEyebrowUp;
+isDisgust = Api.isDisgust;
+getEyesStatus = Api.getEyesStatus;
+
+//too many false positives for now
+//isEyebrowUpSpecialFunction = isEyebrowUp;
+//isEyebrowUpSpecialHint = "Raise eyebrows";
+isEyebrowUpSpecialFunction = isSmile;
+isEyebrowUpSpecialHint = "Smile";
+
+
+function jsonToApi(json, api)
+{
+    var obj = JSON.parse(json)
+    for (var key in api)
+    {
+        var methodName = key
+        var propertyName = api[key] 
+        if (obj.hasOwnProperty(propertyName))
+        {
+            Api[methodName](obj[propertyName])
+        }
+    }
+}
+
+// Duktape on Android doesn't support function overloading.
+// We do it on JS side for Api.meshfxMsg.
+
+if (Api.getPlatform() == "android") {
+    Api.native_meshfxMsg = Api.meshfxMsg;
+    Api.meshfxMsg = function(param1, param2, param3, param4) {
+        if (param3 == undefined && param4 == undefined) {
+            Api.native_meshfxMsg(param1, param2, 0, "");
+        } else if (param4 == undefined) {
+            Api.native_meshfxMsg(param1, param2, param3, "");
+        } else {
+            Api.native_meshfxMsg(param1, param2, param3, param4);
+        }
+    }
+}
+
+if (Api.getCurrentTimeNs() != 0) {
+    Date.prototype.getTime = function() {
+        return Api.getCurrentTimeNs() * 1e-6;
+    } 
+    Api.print("Using overriding Date.getTime() implementation.");
+    Api.print("getTime() value is: " + (new Date()).getTime());
+}
+0.38.2 cml/coreMLOcclusion.mlmodelc
+0.38.2 cml/coreMLFace.mlmodelc
+0.38.2 cml/coreMLPaint.mlmodelc
+0.38.2 cml/coreMLEyes_v3.mlmodelc
+0.38.2 cml/coreMLSkin.mlmodelc
+0.38.2 cml/coreMLFaceSkin.mlmodelc
+0.38.2 cml/coreMLBrows.mlmodelc
+0.38.2 cml/coreMLHair_336x192.mlmodelc
+0.38.2 cml/acne.mlmodelc
+0.38.2 cml/bags.mlmodelc
+1.4.0 cml/coreMLLips.mlmodelc
+0.38.2 cml/coreMLNails.mlmodelc
+1.7.0 cml/coreMLBGPortraitLow.mlmodelc
+1.7.0 cml/coreMLBGLandscapeLow.mlmodelc
+1.7.0 cml/coreMLBGPortraitHigh.mlmodelc
+1.7.0 cml/coreMLBGLandscapeHigh.mlmodelc
+1.6.0 flow/eyes_segmentation.tflite
+0.38.2 flow/hand_detector.tflite
+0.38.2 flow/hair_vert.tflite
+0.38.2 flow/bg_vert.tflite
+1.1.0 flow/hair_lite_horiz.tflite
+1.1.0 flow/hair_lite_vert.tflite
+1.2.0 flow/hair_lite_horiz_heavy.tflite
+1.2.0 flow/hair_lite_vert_heavy.tflite
+0.38.2 flow/bg_high_vert.tflite
+0.38.2 flow/hair_horiz.tflite
+1.6.0 flow/skin_segm.tflite
+1.3.0 flow/face_segm.tflite
+1.4.0 flow/landmarks_contour_filter.tflite
+1.4.0 flow/landmarks_lips_filter.tflite
+1.5.0 flow/landmarks_contour.tflite
+1.7.0 flow/landmarks_contour_prior.tflite
+1.5.0 flow/landmarks_contour_medmask.tflite
+1.7.0 flow/landmarks_contour_lite.tflite
+1.5.0 flow/landmarks_lips.tflite
+1.7.0 flow/landmarks_lips_fast.tflite
+1.5.0 flow/landmarks_lips_medmask.tflite
+1.7.0 flow/landmarks_eyes.tflite
+1.7.0 flow/landmarks_224.tflite
+1.9.0 flow/landmarks_ears.tflite
+0.38.2 flow/hand_skelet.tflite
+1.4.0 flow/frx_prior.tflite
+0.38.2 flow/body_segm.tflite
+1.8.0 flow/lips_segmentation.tflite
+0.38.2 flow/hand_gestures.tflite
+1.7.1 flow/bg_lite_vert.tflite
+1.7.0 flow/face_detector_online.tflite
+1.7.0 flow/face_detector_offline.tflite
+1.7.0 flow/face_detector_multiface_offline.tflite
+1.5.0 flow/bg_landscape.tflite
+1.7.0 flow/bg_landscape_lite.tflite
+1.5.0 flow/neck_segmentation.tflite
+1.6.0 flow/fingers/i_closer1.tflite
+1.6.0 flow/fingers/i_closer2.tflite
+1.6.0 flow/fingers/m_closer1.tflite
+1.6.0 flow/fingers/m_closer2.tflite
+1.6.0 flow/fingers/r_closer1.tflite
+1.6.0 flow/fingers/r_closer2.tflite
+1.6.0 flow/fingers/s_closer2.tflite
+1.6.0 flow/fingers/s_closer2.tflite
+1.8.0 flow/watch/wrist_st1_mv2_a050_clean.h5.tflite
+1.8.0 flow/watch/wrist_st2_256p_v2_norm.h5.tflite
+1.8.0 flow/watch/wrist_st4_a050.h5.tflite
+1.8.0 flow/vision_gelu_tanh_float16.tflite
+1.8.0 flow/acne.tflite
+1.8.0 flow/paint.tflite
+1.9.0 flow/pose_estimation.tflite
+1.9.0 flow/body_box.tflite
+1.9.0 flow/face_match.tflite
+5.0.0 other_assets
+âPNG
+
+   IHDR   ê   J   c=-√  wPLTE   ˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇˇ(her≠¨≥˝˝˝»∆À$ 3-b^l-);)$7ß•≠`\j´©∞50BıÙıÕÃ–•£¨‰‰Ê‹€ﬁ—–‘¬¡∆øæƒ|á[WeTP_GCSC?PÒÒÚ÷’ŸXTcKGX>:KÍÈÎÿ◊⁄ª∫¿ûú•ÑÅåwtÅ¯¯˘ëéòro{ebo84EÓÌÔﬂﬁ·∏∑Ω±Ø∂äàímjw¥≤πõô¢OL[”“÷óïû·‡„pù’2   EtRNS ôÍZËG<æÒàÊ¡~q˚ly¯‚ˆéä3Ó€vaEÏﬂ∫7i?–S/íJ'”∂´£É$Û≈ë*ÿ…®ñåûNÃ±\ö^Z◊  ©IDAThﬁÏïŸv¢@@KDTîE	∏¢Ën—∏DM¢ì§˛ˇóÜ.e–ÃÃ9Ûº/©ÍÍ∑´Äj&ìi⁄úË˚ØMaµç€-l~Ñ32/–öaêÌÒÚ4*mNI÷Ç8U6÷\∂Å÷.Å≥lj<*J»X{|˛úR±œVÙW@åp«ÀíÆÅ,!'úî=&ù’sQÈ%LÚ>ÖjP“‡Dˇ8√-k°±*Òç∂VÍ4^d˘àfñeMïy·Ìq>l†∏«Ì…à6i°f‚˙˘˘y</ :≤¸ñG≥DB‚¸Xj0!ÒuøﬂßÛUà(±ÁU>tÛ-Lﬁà9≤î=@HŸŸ±àjä&Ç^Ä†6FQ¶‡UË3°:pòPév"π	˝‡„$î•ø^M}ä	UËàg	∞±I´Q‹&Ñ†#ˆBc'ZiØÑ0/tî‡;vX–¸V(§\
+¡Z1!%.§0!⁄Á*õÇ'q»:é;@´aíB9!-«eg Ñ„#CaÒ6÷tf?úw∏ﬁ!»˘ﬁ’qã¸Öê9§eX (`.Ñå∞#ü πSyg£Ü«∫ßnK»¶U¸\Ô–`Â[$îÏoën˝.¥YItØ¶∫9ò˙‡⁄Z(càò åïÄá3h—ô’§uhVf4èByÕZ¶kX JQiuà#(õìPÆﬂØLıàŒf¥ˆ,4˚lÚ∏Ú¬«Á≠[ÇIo] ∞«¿=òötì‰G$r$T£X}hì/…	°†s:Ω-\_”‚B’É,≥Uû!bI“g Ü∫Á·Í&’eÒ5Õ∞IHqªèË≥ŒQáT$ÑDctÍ–«p8Ï†ŒG2∫ﬁÑﬂ:î+?G¥øÜ2Éàâ˜‹C6⁄BÚ¥ÙÚRkÔH„ÀKΩım‚R•ëÿŒwà3pÑjßDZòvgvbÏÃ&∫€æ*áj/ê≤D·ÔB‰§x¥ë‹ÌÕ˜ï,ãÿ°Ô€’∑lÇ“æ¸YÜòI
+ı„ÑzÆ˛†—c:fàÆƒNåŒ©◊øC‹Y_uhËsH
+U¸˘?¡P«⁄°(wUÏj¸ 6ÄXK˙ñuDÈ,‘Ó‚+	é•üLàæ„ºéA/&¥Æ◊Àï ù¡B¶OΩdHeÚ°∆®U>≥÷Bˆ„øˆ&	A’`‚9'˛kœ•`¡YHB"gG5!Nè^—õ~π8—Œy&:+Ω‰w?Õô–®ÕÕ”S ;*y%?[âÁ12±áN2pÁŒù;wÓ¸⁄dë˙ﬁ
+ç…®óÿè¯}∏OC+·3QÒ{1˜UàQÒ€qÍú®‡-∞õBDo?oµƒÖfHﬂöêi_˙’¨πÙ¥DQ8ï™.J≈ÜM•™*à“nX Zu◊EgÇìêÿ!Ô˜; º_?ææw|k'±!HHı∑!ôsg<ñÄ¬»ƒkÚ¯íº˜[B˝åRóx$ÔKÛcAËF)ïƒÎ±ÁÊ]cyh—ˆÒzºpÇõq¬˜∏	Ωâõ–€∏	·k‹Ñ~Ü	ıΩfÌ™Ñ ˘qΩ◊H8¡∂÷·i£WÁÕ!8Ô~&ØZÔuì9Û¸ +¶v.ÕÁ•…å¸±Ø±^|F»TL∂ Õ≈∫“§1«J®ê‹ﬁc ≠)ﬁ cÏ˚m© RB*Ì≥úÚØ=10√ß0°Å£"œá}Ñ#0'¡∂T˚I°“ø<Æ˘Ä}Ñ1f¯&Ñb€ºm“Ë;jº£OÕ[ÛÚ»¢O\∂
+}≤∆√˚˜6 è&SÂjµZ!?ØC}]æb$y%Ã˘îU]q≥π.\Ÿ’™.íÈà+Í◊Jı ú∫m9béèx6ﬁ\™úóßº⁄íB0∫zÅ(®·≠Ù%ÖMÅæR˛kº£ﬂ†i˜G?ZFÉDÙbwΩº’πµåêånÍ
+À√¿w-Î™•ﬂ≤©ª
+sB¡sàÌ∫ ≠›û¥QâÃgÑ≤Úe†Ôj◊π∆i<Æ#mE-t*m¥∑m=n mÙ¸ﬂDÒ˙ F‡2ú=ﬁ"I˜Àœ/h°≥‡dzI/∏xCÁqei€Á	FU`öcΩÉ≥¥ÙœÒd'rà[∫¨˜¥GdcUıÓüıÏ3B∞˝µhSËÉ^z´ÙÑêcq&t ùÉπ&GCÔ9X¢ºpKyÌ%Ö8U’›Xc/C7Ë-˙ê90|!]˝£T∫ËÜ6⁄”k}‚…ô–)∏y9Œõ∫Ω) ÀQBr|¶ªÎ^%K0“ßq∑ñÌã«Åèø“ófø'Z\={&ÔÅ⁄nuﬁ]m&¥ü˘s=kÃæ&L
+≈®ﬂ&y0˜¡º§,®G>LhsF∫Fr<3W"ƒnóà‡òÕª$çm[	Uy1èEà'x1+Ùa!ˆÅï¨é∞L¶tÄi)ªÖHÃé≈:ì¿Ç:õÛjT3±<Âº ñ:sfÖ∂±H±rc∂Ê4€ïaŸ /®#öñyS)ÜÂ9!y Œás±˘}å/Ù±"ëXﬂAåX•?‚Æ">¨Òˇ`!>Ï&àèàÃ∑∏¨⁄J¬„]<vˆ⁄óÑ∞˛9Á— V"»ˆáÕù¸/V◊vyˇ¸0ÜY¸ »]Ù    IENDÆB`ÇâPNG
+
+   IHDR  P      ¯ø™∞   PLTE   øø”ôß≠èõπÖõ∂Ññ≥àô∂Çï¥Ññ∂Çì¥Üë≤Üî¥ÖîµÅï¥Çï≥Ñî≠ÜõºÅî≥Ñï¥Éì≥ÇïµÄí∂ÇîµÅî¥Äò±ÅìµáóπÜí∂Çí∂ÑîµÇìµÇî≤Çî¥ÇîµÄî≥Çì≥Çñ¥Äë≥Éí≥ÇíµÅì≥ÄüüÄó∑âùƒÅí≤ÇîµÇì≥Åí≥ÄóπÇì∑Äí≤Äï≥Äî¥Åì≥ıˆ˘Çî¥äñµàô≥ˇˇˇ˛ˇˇÇì≥Öí≤áó∑Äí≥Çïµ˝˝˛Çî¥Çì±ˇˇˇıˆ˘˛ˇˇ˛˛ˇÙˆ˘˜˜˙˚˚¸ˇˇˇÅì¥¸˝˝ˆ¯˙¸˝˛Ñï¥˘˙˚¬Ã‹√ €Ùı¯˛˛˛Æª–˛˛˛¯˘˚ÈÏÚ¿…⁄±Ω—ËÎÒ™∑Õˇˇˇ˝˝˛ˆ˜˙ÓÒıÊÈ¯˘˚ÚÙ˜˛˛ˇ∫√’º»ÿŸﬂÈ˙˙¸ÚÛ¯¸˝˝˘˙¸˘˙˚˘˙¸ÚÙ˜¢∞»˛˛ˇ˛˛˛Úˆ∂¡‘ —ﬂ‹·Íﬂ‰Ï≤Ω“˚˚˝ÌÙÒÛ˜ÈÏÚ◊‹ÁŸﬂÈ©∑Õ´∑ÃˇˇˇÒÛ˜ÚˆÌÙ„ÁÔÎÓÛ˝˛˛˚˚¸˜¯˙˙˚¸∂¿‘£±»œ◊„˚¸˛Ùˆ˘∂¿”Æªœ≠πÃ¸˝˛˚¸˝˜˘˙ı˜˙Ûı¯ÎÓÙÌÔÙÅî¥ë†Ω‹·Í˘˙¸˙˚¸ÁÍ«œ›ºƒ÷œ’‚£∞»ˆ¯˙‰ËÔÈÏÚËÏÚËÏÚÀ“‡ÿ›Ëê†Ωì£æÌÔÙ˘˙¸ˆ¯˙‹·Í‘€Â¡…ŸÏÔÙ¯˘˚ÈÏÚˆ¯˙ˆ¯˙‰ËÔª≈÷‡„Ïçù∫ﬁ‚Î„ËÔÁÍü¨≈î£æÙˆ˘ÒÛ˜‰ËÔÈÏÚÒÛ˜ÚˆÔÚˆÎÓÛ“Ÿ‰±ºœ˝˛˛˚˚˝˙˚¸Óı›·Í–◊„⁄‡È’‹Êœ÷‚‡ÂÌÚÙ˜≤Ω–âò∑ø»Ÿ¿ ⁄ﬁ„Îö©¬»—ﬁ‚ÊÓÚ˜”⁄‰º≈◊ú´ƒö®√ÿ›Ë·ÂÌı˜˘Ã”‡ƒÕ€¡ ⁄î£æòß¬Ùˆ¯¿…Ÿ‡‰Ì–◊„ËÎÒü≠≈“ŸÂ¿ ⁄√À‹µæœı˜˘ÏÓÛ„ÁÓÒÙ˜‹·Íù´≈≥æ“‘€Ê⁄‡Èçú∫ˇˇˇπvÏ   ˇtRNS 
+(.$%!24081<+7,&>""*D 4B@6+B<:G«I˝ıJ' FEÒL;˙ì¯ÛÃ∆Í˛OÊêÈ:‡SV–ÔQÌÿØYL¢Z˚‹ƒ¶•ﬁ¬Ê^[@ŒªÏ€ºå•CÚ‚ãfMàÇ<Âµ≠éåt]Vˆ…´™~tŸÀ…√HHG◊ºjC"ﬂ”“–ØúÄTNJ‰¿zg30&‘öîëaa]B7æÆüz7,∫∂≥®§rbT<ô^XTHµµ™öíwmke.Í–«°ãÅááÜÖ`NLA;2&†òl_Zêçå|ytR,lkYMMqd9ôfípf<XRÇ"y] ø  SQIDATx⁄Ï‹Mj€@∆Ò‘ùëîë2RdDÖ\R\Ï}q…≤õ“e…2=AìMwYt’U°õÙ…*'Ë9∫,∏}‘n4Ü~xÒæÔˇ Çﬂ£c¥'Ií$Ií$Ií$Ií$Ií$I“÷m∂'ıí≈ˇAÜk§Ù‚-f∞ê\–ã∑∂~(@ra/æ∆=ﬁl‡B—{ÒZ–·Ç∂à·£ˆ‚Æ∂©UZk•ï
+Z s¡¿ouNœãÃUÃ¬G/Ï≈õ„≤Ç8\ö}yÒÍÕı›˜¥p@˛>zÅ/Ótéh]dW7ßÀ¶∑w±6>∆<Ça/æ°À‚èóÀuü´(≠}úy_‹ÒZ]tÂtÎæñ >zÅ/ﬁó@≠tÊf˘{üFQ°yÛæx{\TõoßxóUŸ˘∏ÚæxÕ‘<ﬁ.ˆ„0Nµ‚Ã#ˆ‚›}û≈∆ﬁ˜x∑ïâp~ì|ÒÜÁéã_ÙxíE…˚¿–|q«kÓÛd˙∫«ªûYÕÛæ¯äÁﬁøiYù,{Ωõ$´;]ly_º{ˇ{û{x˘ÿñ©ÊÀ#¯‚éË"2…$ÙŒÜ÷DÓJg #¯‚5OeÒ‚˘¡ëáNé7`…#¯‚5Oge5Œè=ºÓJ◊W¡¿oy#;À˜=º£¸dgä-è`‡ã7º»ÿaË„?W%c¡¿w<ÂxSÔÂ~>¥%„0¡¿w?ä‘ºI¯ƒ«;õŸQ∆óG0≈;^≤ÖûWúy_ºÊÕcT¡¿ˇ≈õÜOΩº°E|y_úG0≈¡y_úG0≈¡y_úG0≈¡y_úG0≈¡y_úG0≈¡y_¸OxÌ_ú˚ÌFº˝„ /ãˇ5œ4ºÅ˜»Æ]»¸è˛O€é/ãˇdÔjBõ¢∞Jb÷›$ª´◊¨"ñ˙Éä≠
+Jçh,ÒÊAÒ`zë*)X4-H†*6 Ωÿ“"
+)x—¢ˆ$Çà*û<x®ˆ:æ7Ó:â≥I6ŸYÒ£–⁄ØÔ˚ﬁ˜f6È4+Nﬁb–ÁÖ0aŒ®b˛ÎËˇ;ÓAûCy<<‘Q-≠5c˛ãËˇ;ÓAﬁ˙∞¨®AKﬂbV´£9qLef®≈¸ó–S¸wº%yáñÑ⁄ ,¶ØXoÙCªÆ◊‚,e cF¥ƒÃ≥€Ù¡ZÙëÚﬂÒ¿ﬂÎx”ÚtCRiÑË ´xK¿◊Ç¨∑e0mñ¥ %FJGjÆÁ~”ª«?ÊxÄ≥ƒyÎ◊≈eI”bXÄ$)ÜaCQ	*I–:8ÅÓƒ—	∆4UR$•Ç>UµX0àÊÒõ¶◊$ÿyz4–£ˇå„súc*o≈Ü»Œ®l¿/Ã>»Y85ÿw˛ÒóÚx“PP8(¨.√Ö:á+nLÀÃâÈ‚X_>óN•“π˛æ±‚ÙÑ©ÄD™êcv«NÈ*•.y<õ?⁄›âÙwÅ˛•Wy˙ÊÒØ8N-¡LqÃ¬Â≠é&e”Ó .úˇíïqn`¡‰ h(. ìÛWÀsÃ]˘±ëöáﬁÒÃ.ÈU†˜l2ÁÅﬁƒ;æ7EÛ¡Ò˛ÔÂoéñà}Ã±bÕ“Ω·®.À=ƒπœ„&ñ¡≤*ú’±~+F|z¥É‘@«Ë4§ 6–˜õw™&ﬂÊœw÷¢Ô-«E„ËCº„Ué/Ë¯¡…)'«Ö [µ¶mŸ∫(‡1©âÎ#Vï¡Æﬂ ŒäQ(fH]däÉZ«3;”≥8·≤~‡B}˙Ø&◊ÔâÒﬂÒŸ≤æ¯·xÓÈ7ﬁq°Ú÷.m_Äº⁄»œƒ°åõØÇo8Œ
+àÎIìÜH˜@§*¬Íj¡;∏pK5¶øp‡Dä£Òé˜œ'E;Œ¶ÃP8« Eñ≠ﬁπz»´+´¨‡C]Æ
+Gu0+ÚÃ‚
+/fpy}Œy¬Â)q˙ÿ”Îé>˝gA¯M{¸w¸Âê_égÊ9«≈…[Ú⁄óÌ]ô$ı—59aJj¬±1LùΩ~»ogâkÃæïk©?ãHOw;yz¿=˝ vÜ—äîˇéÔz¸Œ/«Ôéséì∑$¥4“ﬁi„‰q87¡Ê™‡’©0,◊zIËΩÃj}lÉA\ûæw5Cﬂ˘:n*Œ:“ˇÒ@πw<3%+˛8ﬁ1√9.N^[$i]%—u Ï‹¶.…•Q“$FK≤ƒ3Ûy¬ÌNlñ˛ÓÑ¨®	—ªûˇéÔÍ°£¡Ò…Ç…9.BﬁÊ%ˆ¥-m≠πH\†Øç·´`Íh√áÛ§i‰áavn9ªüa ÉYúÍnû˛hg]x¢¸w¸||Ò≈ÒAn»…[u°µÆ‰ë˛˚\ﬂ´‘≈$EŒfH»de√πÂ,OA»ì>üjÖæ{JG˙Ä‡D˘Ô¯À	6√bœçsΩ$oœû–ö%[©¬ñ«‘˙P7i	›C:Kî”‚é◊
+fÚÈÆ÷ËS#å^`¢¸w¸‘:Ù¡Òs78«≈»∏ñGéÎ˙’Í≤›§EÏÀ:ÍcyäI¶>≥´U˙‘T“t¥Ø≈s◊kA¥„ˆÆg. Òs„‡x≈ÍGEÚœu[™&@›\Ü¥åcs®è1/¯}MΩ‹Ÿ:}«ó®âpü&ßC·¬§WÆœ›◊≠¬Ò?(r∂ª>Î—´¶Ë•SƒûÉ>∆lwéÂÈFØ˙Ù\≤"∞u3·˙¥-¯≤h«˚>˙ÂxIØdπ£_%Æ1≈5ÿ∫æe;ﬁÓÒÑGQÍ\≈¬Ãìådi¿˝Àè∫¬KQÛ(ø˚Ûë¸πmåøP«ﬂ˚Ê¯ÌjfÅè9˜òèÀíjÌˆéÑœÜDãƒ#äLÌ*3OUÙ∞Û¯Q‡C·Ú4#w‹÷ÇM@›àI"Ô*C·˛8~-
+Ω¸µj|V‰÷A‚Ê¢ˆΩò÷éÍn§àGtÅæXıBÕSÅ˛)Òå6
+¨L∞H4LTı)?<oã®8∂Õ%ÃÒÙ˝∏)%¸pº7[Â∏∏Ám◊æyrÚ¥Ö√ç.}ÔÜìÜ=Èˆ¿}ıŸFq9‹êypØn‡?≠!sEû–º˚˚H=ºs‚·√«Î”—R¥∫1ˆÅ~;á∆g⁄ÿO⁄á¬5ém€ë¢›Î¯£∞n®æ8>Ã⁄/«E˝e	ı≠ÿºr€ñ≠∑ÔÿΩˇ»áõØ÷kÕ<Ó¥/ˆÚ;“=R˚æ∫˘·†s1¨[ªöóèíöH]˘t∏˜Ô«_pÈL©â‘]Yàe~–uÏŸÓût˜déûªg∫gòù›ÅùYwf›ôƒ]Ò
+¡<_bºDQ£TT<Pæà"x≈AADØı¿+äÇÎ—DQDÃÉ/éUwoœ˙WœöLØò"¯∑“ı’W«_uÔ>ëu°Hè∞‹çÇîX˝
+˛+m∏éÇã≠ë1t˚õH–àªE/xƒo]_¢’Å‹}wªö•Ü
+B4øê+¡ƒŸπ•üõÈaVÙºÄ‘w˘>ıÃs?.ÕÕÕŒNÉÄ‚Åö∑Ìƒ◊ ›ÄÒ~aΩ¸í/"'ÏﬁÀîOÅ∞'ﬂ˚…Iæèrál=wıÛãã><ÌËÕèºsod=∑ÁB ]i{˜ÃM+f≥/¸åÅÒ˚º‹0‚ßÌ“—ó‚AlÁt3f¶Zí‡‡ëéÂìÛŸ‚ƒ¯8ÿqs˜=πÃ˘]Ã(xﬂùPÃoz>rÓˆπŸÈ©ï ‰¯8Ä∑aj†Ê}¶≤\N›éÙ≠~xº≤ƒ¥ONé≥?å¯•›'¯’é∂ÎLO#–ú}ıÃ&óÃ?„ÊŸ*ÉææKŸ◊¯Kn∏E@¡¸0‚,uÅ¯ˆs{>Ú∂ÈñS4zËÖTg∞›µôt≠Vœ'≤`#Ê‚π=W˙∏Òq∑óCÛ∞eﬁÂ”c>ºgnz™2>QÃf YDoêÊ#w⁄9ÃÎœÓ/˘a∑wv
+»TÃ6ÊöÕÖ˘F∂§öö]zﬁÁ¿t:∆I$Ë¯g/Ìß€ﬁRçmˇà/¬€F°ÏÅZ<îå¯yÄ¯Ë~#<ƒˆ)
+ª_2£É⁄pñ≈∂uΩ\Ñt4ä6Çg hæ=Ÿ'`⁄zÊ #,Éº›#Â∏≈Èçï…b£ôÃ◊cµZ75ìq?wÉÇOŸΩ∫ïNÌ_#ùäŸÖd>ã÷jQ¯íÕl)µõnGﬂ–tËFÏ|,2˙’•+S,uÙıÕ1Rèœ√◊†Bç¯£vÍÒ≈„| M[O-˜≠√øÉQeÔ`(-Y6ªÿ+Ü 9¥±√˙^ôÚ	ıÛ˛√Õ ¨axúæQ:ci™2ë]»«jÈ∏¿$æöÊm?ânˇÈ%®œ7ëÕ¯”∆ãçd=ä⁄ zßéÆŸ0Ωál1∂Ï[lQ–^t¸ÁlÎΩ‘·”ﬂ‡æEJGFçç·[–àﬂWíáF¸ür#:)
+ç‰-1|Ô6÷e—‘¥í$∞0øÄé°ü‚U†µ„ó_zîº5Ωa≤∏êØ•Ö^8t:ü‹jö_Ã»n¿∞\Ä	äå∆Mü v…XT@ªj®™a0˝—XÒ€CÊ®´´≤Ìı∏Â!.Pæ[æÛ!î7•&ÖdçD%pƒ_jÎ	#√ ˛Vèí_<ƒá&T»}è_]+
+db—Ãt-I≈ñë9fölﬂ‘0ëÄ}ÎŸ˘Æ!7LW&…X¸mH%MÎv=cÕèX¢wÑƒ#û"Jõ{Ñ|=U)ŒÁkB‚Z5Re˙ÅRu¿oÍÚv€(lÎp7]ﬂ«ªçÕ åµ	Bi@V¶;—
+ÒPydÏ¿o¯iæÀ_"‚hÙo⁄+ˆõˆˆG l¬-]óÕåÖßêh~æXŸ{’<ˇ‘∆˝‘ƒyJnÔ§í¡9{¡·ı('Yö) 2Ë≈ê\EÛñ+ #åP,§dÌW
+Üßß∆ãà]»∞∫∂v[µdœx≤ì…Äºº*+âQê∞"ﬁ…∑pPµºÙO -√⁄≠<°J¶oi"&≠Ä«^¿Ñ¢ ?w†à◊QÛ9‘¸sg˚3€Ë@øY¡»Ål¨@œà£ítl°Xπ{Ü ì⁄:ÃÓ≤ˆ"’1oØõ±4‰≠-Bñß@ ºU5?
+öÌ=ÃÏ•∑)|«≥I∏ÎHvOíJÄ†~]‘,F-]I’ºí)„ˇO¢Òm÷3Ó@Ñwy“™∑%ÇPjU'F√T+xƒˇÏBä:@ƒ5¶πY¨lß4øààªFµ¢uÓ◊äòçÏ´ 8∫ò±:π8>≈s=^.ñLÏÉ¬!õ“=^ÆBÎ‚πéïıp
+?¬æ6≤∫Ê7$úg√9+¶D]1ºR)ü Üe 
+>wGPø¢õÄü 9j¸Í≤∫b  x∞mı8ŸZµg∂	5ØklÂ=älI!()%xƒ?≤Ç@¸*jÈ¿bà€F¸=µCQ0r†¿Îf…Äßòü∏Ób7’®Ç'!–¿ñ»◊/NÃÉu¢ê`ﬂaÇy~Õ®O»ŒYØ~πÖ÷øıN(´]AFÌ∂w†!∆ZVïBê£äï'à≥·Oê¢ÙñôÃ :∏™|±]n°ƒRËxûPee )%xƒÔT˜Ò—~ƒôfÀ÷ºH,ï]âàGú(
+¸ãèh§s®÷ExätΩ1I5#WÄ_t≥Ùyèó≥'u∫†√Ÿ7+Ïa‚ø—¸ô∆Fm(¨‚=’„e7Äá|b∂≠›’o◊©,ƒ&~ËÒÚ´‘e]3Rà»P.∂á¯ÍPñ6À°rj√˚≥‡ﬂÑàáqÕ÷|vèóœùöáF¸MZ0œªñ¿8Î “?•J∫èÆ@È◊$Í˚i6-tH≈@pGøÊ,•˘Z	≥¸êSÒ$⁄Ö≈l¿>πoü∫"~rUÕ≈Îççƒ5n≤g’mpA®á-A®Ñ“Vs°H"XÛêP¡#˛æ§…Ä∏<‚ø¿Oé¨âZìØf;éÅzcZ–ç,L«éÔUãç|MKΩ∫«…IÕûhpZÂÌÖÄ‚ïöõîÊ'’[vf/N…„¨';äIT/≤5tWª´ƒ>Ö©Ëòßâ^ø.`∂ªR®@äı8Î"æ%/ÇOU†“¿üxÇ‘◊ ÒmçøZm/˙‡øÎÔà„ñåTNÁ≥Dûº¸" ò†B˘7õg3<˜ è)Â4«IÕoBúßpÜ«Î¥–V¢%o‘Öêdz{g}˙ùm!Ñ/ñ˝ò‡LŸ(uµj	wÍ/%GQá é2™™@ [aõP¡#~Òö!˛ "ÓÇ˛Õ#∂âﬁ‚à÷¢Õ«zú‹R∆”©ò—‘2q
+{¨∞zxÀ¬L<Õá˚kﬁ≤‰04⁄X˚±˚Ω∞«…Ô…Z¡Ëb7¬©w€f]Ss—‰oDsÀæWaIP	BÂ∏`••wC¬°J"ú9±	^ƒè∑oè¯˘^ﬁöP(ﬁj[ì¿ÄπùH±9’™¬pŒ£DΩ=ü.K}ãû¨Æ˘>¨e04Ö˝5ìóâ9˘©ıx‘{´a ﬁÉ;ˆ§®∆1¸ôÜÌ∏YPÒ“°
+FFO¨B(ñ7©BAWŒ<‚ÅxúÙ%+ÙcCÍx <o—ïÕvµyﬁ/õ°ÊX’*8F8Å?¬Œ◊P˜ÚDÑ÷#4êìL¸‡|ˆ1»≈{ÓÂö–ÈBPÑzÑÁF°÷‰Ÿx
+úŸÆ%Ö}58% Bè8~[ Òc#Œäû/‚'‚
+¸‰~*Óc^ÿ5è≥ÔßˇTµ$?˜8
+›“pıP8ñœPíº8ˇ·¶Yœ`Qzòﬂ/®Ï^FV)¸◊˘[Üí—ú‰ﬁPÍÒhﬂbëæÉøiàÁB¿(ú}RÑ
+uaõcxB≠‚•µA
+}Àm˛B·nêyáÚz\ø`È@ø‹œ˚E(≥Ìhµ,É«˚1ˇˆç_W¶wßÕQtBÛîvÀÄCaÕàK´<∫.å']BΩEXÛÍƒ¶"\N™⁄)ìÑ¢RM®#hB)¨)W˛óàá˝ß=M®õP¸CÏÄS…r3∆Ô&zdÍ¸»y∫ ≈èÊ5◊±?uJ®"4;nâÒ~ÈaŸ¡K$T∑#›DÃq©ﬁÎúU!FJuÿm¢˛˜'î˝‰pÑºe °ÜF|«˛!˛ƒpà”Ö~0°∂ÒE†ÃCY˘|+≤-]∞+G!}ØŸÛ8u3p
+”Oç2˚£Ã¯èSÑ™	$˙∂¿≠y	KA®®P^¿Û~9ùÛ8â'ÍtæèÈ#‘Aá8YË˝ ÛN$∫	∑ªßÕÛf.1¢ë√ ¡ﬁ0KoÊ5«ˇ—∆róÛÊeB£‡ŒPBÒ#¥YæwnnÈ¿Ü>J™ÑRU$Ôó(è”zø˚àI¢ìr\_9Ë'
+˝‡M5/)Kÿâê«≈ÂNY}	q‘ÙÃªê–)ƒªp§BqdΩÌq“<º@pÓXIBEÌc	®GÌîz<‘`/B*Áä˜ÀL¥l˘ü†ΩˆÃ*«f®ÅÑÂJˇkƒÔ
+q∫–n"Ô'náxø–ÊΩO√<Ûn!4Ê—ß	’Ë°XJ˚Ö©˜é"ÉU#¸rkmj^œ⁄Ê€zTΩ‘ñ#·`C¸oˆÆ4∂≠"s7.â”⁄n];∂;∂9ñ“ñ&†òFâ8Ç)(*J+ê â !·*˜!$.q) @Ä†E(WÉZ†? qîràCW	á◊$~ ÛÕÆ≥v2œÔŸ∆¢OÈÇ†xﬁŒ∑≥≥◊73º\:5®î¿ÑY«≥ôºròΩ-9‡5¬uΩQÔ:A29‡∞Âm~—9,(®áu¡Œ†ÿèÿ/Lq≈’!Ó&û°7'hã≈¥ó&˙3“—¨’ÆC\ﬁ9Z?Ù{ûXE¬∫+n˙Õfã∏[í,‹Ê#.™g{˙>_ÿäà[gKÉRß<a‘n£GàXπÁ∑·€§1ùcNÆC‹πA¡âíÕ_)N,w˙6F}¢D21áÿ/%…f»!Ÿzƒè©∆†$ ‰Öﬁb…KP†â'Úë@ñä<÷ê`~íµ<%§P¯®Ëæ#Ï:ƒùü†Ò”ÑN\´v‚eò9+u\'¸Ù4sÕ6zò(9U|Õ&ü¸UîGªhNÄïAuÙ˚|X9ﬁíÜÕXÑdÛÿâàK∆Úp<·ü∫ëu‚sdè//˙D^tıßÊ∫^˜¬hßgc‘˜©ƒ¡®ß∞@´$…	˜2íe"´óûƒ*5®f,Ù≤A—
+aK¡ø≈V≈±â¬.ß‹£N\PyË/,óx3¢∏‚∞Îó∑eéãë1)µ˙ø	 B” ôßJ“€$F|V=9'xOîú.ï,ùdı"*mÔ°h°OH•s4ıI¯)Í&ë	CvŸgÁgÑﬁ(z’v‚N ÏÓ?¯Ghõê¶@¡W¬˘2ÒBbX‹M¶H˙Z#ø;í,´w®ùAîº–œ§¢ J:	∫AvªfˇEZ*»ƒŒ[Öî|w;.3òw≥`ûØ¿†¥´í≤9_í6)ßLöYÌ~1].9^
+ı∫ógÀÄùd-∏2É≤ﬁC	o¨“Uy_SÎvaGﬂÍ£@»$Q§qYìsŒ$Åß¶©{â˜§ﬂm¿E9tÕs!‚6%‹Êg◊âi‚Ñ$mîÜÑ¿˚È1èŒBè&§Fõh¶_ÎHrivx;É¬¶º◊‚¶ú∏âa;N /Ù3MÊ=∞@Ú˛<‚ä⁄ƒÏ9◊É®FÊ*ëãy1ª^˙’•9ÕòDÏRÉ˚ :Ó{ƒ+Â$\M)oQ®T”Y≠8§5ÒGW‚Ö "ÿ`+πtl¥ﬂ¥3(\8ÀEQÅÂXKf°üπ1˛EÁ¸Ú7Ik⁄Íç~N=i˛∞qµÙ´ÌY–n]ÅLAã™G¸È˙"^ªAÌ_‡m9IÆyÙv*å˙b&ë≠ ∆EŒ=ı”mriñ-¡FfÍ{n≠ù‰“dﬁ\H©¨z&ÉÚÊ}íA·8eËñ=nßoüœE,$‚®¢I
++:˘X1ß–∆ºó+ÖL–"N≤7Û ÄòÊ‰ûU8˛ÜÁ:ƒçA9ﬁDe∑®∑ÒÏö}ı‹8‡≥Â3§ìg£gé
+ÙúÎeÓˆ6íUÿ°ŒocPSå1((ÇAuò£ΩdP&⁄âˆØØóæÔ¿ ¡ëûyçãú lı˝H©!ÜêfÓóSôùôS[(°Z)‚¸Ôà€îÄm<;zîE-®ó˙8@©p©Q≤dˆ}oûbëƒyA'Mˇ¬K∂\j'ô†”Jˇﬁò∂<ƒ‚GG¢m–ÃY~Ûú§!' Jõ@Öë‚)Èâ‰†0—{√ﬁ>˙èX:ƒvÔ£d”Bê˚£V•87òÜ)òüØƒ†Ä-≥?Oˇ«¢≠zµΩ%ØP»\‰m‹hY;Ût¢‡Újçç3Ê..'ynß≥@>)(…ÛΩÍ%Àî¶Å\ ˇ2ﬂ“†LNãπ®‹üÖeÈ‹[t„–á‘$t%ëßˇ:‘™ò—Cá·&MéπÛ√ﬂ`U¨Á–Vº^U¸√ïà;5(≥Î˜do∞NÅ~√€^By∞ﬁ~ÈÎ$ÿ∑R–âNÁ√4]
+/Ÿ≤∂údn·D7ÕÖ$Õ¥~îQØ∑@É≤È˚bMÈ¥=ÓÚé&ìâ”“†‡%¿Vàr£ªè:i’Y_ÖX»ûê˙«À±†kôÀ˘Õ;√Ω≈âÇÓ|”∫Vœ√=Ö{E∏"nmPÚ9.e"mó´q{”«O>»7ﬂ<Ú¿ìø[Æ2›˚m4)A3]πê´nQ·^406í°#¶$hh¿L+cP√-êpÇ i∏z:©ıÙƒê	¸˙æ≈:—Ô¬8cGRÚÊXl0îÀ‚.Gm¯±¬dË∏+SÌ˘û-§2{ˆÜÁÀ§‘—!Lß§ÊFƒ+3(‹Ëslˆ›∂•ìmã>CΩNâÿ5ØÎ:f+˘p›.ºÈ◊¶xÙ.ÍaK¨f#é˜îâï2F∑S™‰2j"ÆÌRa6„PFòAd√Õ-D<*;	e¬l–—˛π[Àó0∏ÒñßüæÂ∆ÅÚˇ”o9@¢ˆu‘‹àx%≈©˘»”vvÕgé|ô¶ã/™” °Öö0øW „sZDzΩ—ÚÖŸH´“áî9¢Ï∂A≤ßå◊A*L∏(¸ú,™…pÉÎ¸¥ø¿Î'mÖã Üv˛Ssªò¢‚Ã†;wjP&n¥ëÛzº_´zªGÙvÅ’‰Ùn!ÙjÁBæCû#ﬁjiPH–¨2¡$ÇîŒõ\åßÉÏ©±◊.YÔæ¶N±7öÙQÓÊéé9Ù&ú—Ÿì®¡⁄î9∑VHŒç˝»ÂBƒçA9uQaŒæQ+|Î(3ìﬁs‚{4èÅôp.ÂE}ÂkmPjÿªîE%}»ÊoE˛Ëd«b°ÑíT QJHπ1®%3)⁄èsπUÔ œrJªmEmê¨ÿFëÃ¸ ÿ•î+Ø¿†Lh;bú_M‡e„&ÀáûäºΩ≠π©ëÎ(gP<Ï8ÎˆzS≤üè∞H …YÎﬁèlQÙ˚0•nÓKQ^\<9CÆ*H†/™≤KŒ>™Hˇ
+ôôí‹eÂ†\â∏SÉ*ÕæÅ4Îá´◊nx=í2Ë,S©ü’¿B›G;V/ÌãÇŸc≠ﬁ<]@cﬂ—êEP"ÚæTcòŒ¸⁄ûdUZ¸iΩë∑ßFW ã¯v∫p”◊’–¢û1ˇP√>gË˜≈π`ÒE∆~nE\0(‹‚úI»≥¯…@’≈œFGºªﬁ√ËÅ¡ÒÅ{l[ÂP–MÈºbêXQÊ±Î÷˜Q‰f»eœü£¿bhÀçRZõ≤vÎ¢vÊïKW
+ıÛLü¨∫Äˇa;bmÅxB{Óî[wlP˚Æçﬂ¯˛®RªüûœoºªIfïI πﬂs®^Çÿ—»À∞RO=ÕB:R‰*‚˛wÅ©îË†Ú¶.ºâ¶~© í˘Í)®€wV•=]¡Ÿì≈˘Õ›ä∏§ Ék äj¯>9ÆÌé?[Åó2eEãäLßπm◊8u≠ÆîÍ±TOﬂ9ÀµX• õ≤EQ3U`Õ/t9ÃtloCÌìWWu¢üDzk‘€–uòπSnD‹&.O‹°râï¡{˝⁄*váÎ°¿”Ó◊π`}•[>ÊD÷e»—‰#ı"gŒ$Ç(ÇoóYõ¥I¿(å9	ˆ$U/◊∏ñPÒL2;“˛Û)’8êˆ§∑ÊœÿìK7X«ãgÓ‰≥ÌπJµ€4ŒπÊõ û°ôÓWäj¨\q∏ı(fQÖ2Ω.‰ú0±k/‘≥Ø†æ\Iﬂp∏Ò2Üú#Ìg<V)$´Æ"{
+∂ÇP\¿ü}]ä¯AîÅ/„Î‡∫W\]ëoˇ∂õka î—Äg$”T3rm±ûO÷⁄´WàçnüIdU—µ˙∆$åQÿ⁄öˆ3õÒ!ÖU…ü‡∫Àœ™h#uÏÀπFÇ˘ù¶p£{ Æ≤È|÷/¢^¨tÆ› ãzb¨]€C^)r§|!€vÈH=d¨òIH∫OÛ1˘êom∂j£I?D3œ3lQ‰D∫®‡∆Ë¡Ô1‡∞ß‚ã{jnEºÉ2.∏ÜåvMı”><œôrÁÌ§:lmêÃÎ\ÛF;sÖ®ÙãGP¨Ó™u∂Í!s*bÔöŒñ<°’1À⁄Ñ≈≈f|àÆŒ…>äèeG9ºÕ||ó√bˇ§ÌIıÕÌà€£ZÙ√<)ÏﬂuíÉùÁÆª€Gr†e†]	x”ıKÎbuù?_sl9ılôF‚á‡ï”πí*∑ü	X¥0
+«M¯ô`QXñ¿íYÍ’ñ£ÕÎQ˝D€”‘ä‰zƒÇj‡É~QÊt†|‰¯ƒ∞Õ…ubïX≥AfçL◊ŒHÊßUOIçLÁEõ¨áÊZdüOß9⁄Ú≤“ìteåﬁß^Õ¨∏< )ƒ)Ã÷≥l∆˚¨≠ù= “–ÄÁyΩ+⁄·ÃƒãÆéôO”óÙQ/rKøeﬂo≤<$\Ωira∑$Gæ›óÏ˝›hWPœË…Ã6âdCã€ª;ºb•≈6˜r™tÁß÷De‹F^+÷Ó‰``ÖäPu±(~…(ya`∆w¨≤|iY˜·xgπ'd“{“ÓÙ?B|§NàgjE\‘ØY˜"T¯1æcÛäôÓr≈Ê„G0vò,öI‘U¢ùë¨w†òÎË3*Isu˜≠;N];S≈Û.·
+>)ı∏î€]p	áççrE•πB=¿:ZúóîSÏNò#∂Ó{PÿàèÌ‹zDgw˚`(KÓâK”¡Å{öEàóÿu≈‰F”¥màp	v“pÈ◊ìõWÆ^±rÛƒ‰◊KI7.Ÿ°≠BÃŸ¬£¨îóƒ–Eº)‹{≤öC∫IÙ¯Ì;vù˙‹∫£W™vÙ1kÓ†<"T∆T/ıLëæO?˚P~gÌËsı≤(ÌD¬Ã≈√\î õò<CAsÇ{πJ∏∂ßYÖxi/0#˝å_  ªI≈ÂKó.„∂tÈrR≠˚b‹∂)Ï¸òãàˆ2⁄…í%.ö‰‚‰Ÿ6ö4M:r√Ùãa±HPÕ:zÍC«ß‹¬‚)“wﬁÀ˙u7(≥·!…ú!¡òábÌ4Ë≈ê†Û4‹Ì±∆‹œî‚e°ßìYÜ¯Ù^Ùz˚H¡Oê∫A¬ûûn˛õÄ£ØënÅ (íi
+ı—Q÷ŒHVN‹Â∆L:¡≥ù∆ftpñ} SªÉ(qì®ıb±dÈ«¶Æ:¨x2"í50∏™!: i/Ö§ù 	Êîå27]C¢1ŸìO◊Ò“^` 4íÇ` ˝-å-^\˙6tCVG?∞„0Z·MVêº ì]”,„$:∞0ßdè,!©¨B2™b“µ 	`Ï	§oùÔATØéÖeCıÓ˚Áƒ$1@+Ü§4?äi¬rW\KlF‹WƒM/Û,ÏMÂ”DπnçÉ¥ùÕ.Ãf˘≈ÈßÖ7üÚ≤Ô]`≠ùë¨HàVaÊmSÇE≥l˛+¬*p®•
+q$ÚºB?Hﬂ¯¥k∞Ê˜÷…¢Ã¿ oståw")µˇ0ˆ4Á^h9∫dHPÆ—∞∂=‹àΩÕî˛4M6«5Ko¸Ú»`≤s›¯Çh“ëdSkeh3´Ç•p∂!}ßôÙ-{Î–‰ÅA(`9H|	™ÿc{Sº‹ÕRƒK{¡sÜ,ìíÿ|ƒnH¯˙˚ÒObÙ˚1√ì%î6¥ríılÑÇ¿é∏ª$:Ÿ$ôæ¸©bh*e Hﬂƒ˘V¡ŸZª˙î<‰0)5ÊIFA‚$>IÜ QΩWÊd|÷"Æ{aD7∞UÛ“¢Q&üœ¯£Q| æ-Ã∫;4{Ë4vZ4t$ŸhË’Ûõ€Èªw>¯ΩPªÆˆ‰í˘í …î@“<íŸå¯4√>PqÆ[¯‘ì0∏€Ù«π*ﬂ¨ZPŒN≤¶ﬁ6CÙ"%;L≤Y.ïòßyó‡åÀ§o=ÔÎﬁdHöÀA“‹U	⁄ÏFº¥∑“y¯-‘¯Cd“0]ÙBf¥Ÿ+àÆC4:O≤—ËﬂfDJæ‘ø"ÍoO2$¶ﬂË∂ÅÑö${7
+N1lë£®ºm4˘ªtë i-Y¯ [i¿êA9”†‡4“wΩî=$:Öd/‚B7T?–nÍœ•t[¥j$+'´EÚä∏›"È€`Yˇ&<ÕD6ê–$EòÏE\–|√|ß6Ëåhní`4ôÙ]Ωv{&$≥q›È‹∂m5¢eN8ö%ÈªzÌˆ\Hf‚ÜSjöƒ∂≠]¥,Y&¯VØ‹û…,A‹|F˛|Ì¢π	¢ÂV˝7› …lAºÆ_±ìΩ'Ÿí$ÓÔNƒ˜∂ŸÉ     ˇ◊FPUUUUUUUaÔlràa(¨¢!±H69DÓ¡Êa'&˛Åô§V 'U™&éÌg{¬ä∞X,ã≈b±X,ãˇ∆¯Œ…◊.ﬁÎÒcB∂Á≥1ˇ≠JVˆ≠ÚMÎeû´s£ù˚¸ö÷ﬂÎÑµt%ÓK 6çÌ⁄&ﬁ0W£9øıÙ)ÊÄa`gu-ûª√)?çk4ÜzbG÷ÿèßÕÓ-Ç®a-^ªK2†÷3Q´
+x⁄KTÛIom€_êêEßznbY ﬂìåı”ÿ2h\ﬂ√¡c9*†dÃà±b∂SVaAıö|p§ÓJP˚µg¿A∆= ¥`jo§yruÎÕVù†(uI‘gíj◊0 ebMÂ<Ok§’åå≠ÂôJfE˛Rp÷c¸èåª¿Œ5”qyù˘éö|`§F	*E:%HI)7R*∑ÁFLåˇâÈíA)©Ö*6ã‹≥h®6xMñÆ*Q@9Ñ/7cA?ÙK÷ïH–a–URp0)Ö'œˇ(AÊÊàÅ)++Ïñ¨§ìh ’ıö,ß‘Åy∫…LÕ!Ä_äí”•qΩ—˛·xCTeÚ@ø6Ê ñΩ]1f˜“IôUsWÇW∞‰úöíÑîóTÒ&ÎëTı∂s2‹Vıb´kô[LL´l¡í\o s§H¬Rô˘ê·,¥!Ã»àáID˜®çîΩ&´_ﬂ;O–Y2úÚMy›…¯KŸôÜ‹Ea¯◊p}∫◊|ÃS¶?ƒ)s°»<'sÊÑHdû3d(Àú)!¢»<ï¢L!ÂèyûﬁgÌ}é„∫ƒ Áª˜Ïs÷ﬁÎ]Ô^kﬂÔ«}Ë[e˙]V#EYe,í\≈3J3Y‡bV[˘µπEπW¿6ü¨PŸ“Ÿ´à¡agóó(ºÜaPnö«òC8e÷ µbo—EnÛ”ÿˇàq,;¿`\Tù¬/—drfÒÜÒ?mƒ…_d
+ÒS∫pxw‹∏”a≈m>.ÓrÉÄÀºq=∫9ìLHˇœ®∏<Ñ¬v˛˝Ü˛√G=~h¬“ä‡`«é≠B;˚Ù¸…ÉÖàÊ:ˇü=zÙKΩâ%Òﬁ9]ª0ï{£eÔ@5ûû|√tıiáÂ†P°;ˆöﬂÈ¬Ω7áµåU∞å–:ö`;›ÎÿÒÈª∞æD)ª#ø√ â √(™&+˝ª√—£∑‡$Áä#*<≈1°˛‹l-˛‹òç•}’∑wM÷¢Á@Ÿw£ıÎÇ#ß3Ë˙ÓÊË—◊√˛O·3gœù<êl€U£hmd˙˙~¸Ù‹…É ÜªHl∫óEX˙á$Gﬂ˚Ñä	@
+Ç-£æá6o=tÚÜeã3ØÍx¿Vµë∫˙òJÅY≥ºsYó’ÀΩG⁄√¸X{;Ø´ÉyÑ–hêzπ!&F◊·Bê{ÿ±îv!£¸w9;:0ﬂ]˝º$"ıKTV˝R©\_ñ»^ÒOT´–g0é}∑q;†Ù>n|_⁄ó°¸∫1ññÃ∆rGìzœÔBVPF]/ÛI◊'XøΩÈ ßèø˚æXÉ±0eF57vè^†ûÃ=oJrQ6…ˇ1
+>EÇHÁ⁄ƒóºok2ô,ø$á ‡ë-0Íì3#îΩÒ∂ ˚¸¿1Wy°lÅ˘cª8D¬Â^%wŒ‚6jsRV}I.(¯¬mÉ‚q™êˆìﬂŸPåPÙñ≤£ ÀÚíπæÙ.Ïà„ÂOÈ«F(Ì%e‹⁄KÈ+∆qc◊GJá§AÆÏ7,ﬂ…∑+ú;±…‰ä˛à⁄ﬂ+«Ñ˙≠∑/-á)q>‰ŸÜ3ÈWAêLfﬂ∂ÚS@g˝„∂¸síΩ»ˇ1 U>ïMÌpÃKG-mÊÙ’kKT”Êj·-îÓk≥#Oãî—xçPt^LWVÃ”Ö˛˜
+ê‚∞ëYz*Î~«√'QÿêH)Ò>˜;òÿ&\Ÿ¡Îôéõ≠¢YhmÃéï◊˜Œ€@”ìî¢[
+°Ñ6âxû…)ñÀ·K—Á◊oqu3*î5BqÄ°¡òÍ¡\∑Ãπ®[–˜x<ñW@√´oêÿú—¨ﬂΩ©X⁄y£¡ñqÄ[Ω<∫!nŸ •C|sΩl.0ÊÒJ7F∑uK˝Mæ5ü®s£X˚èIN5@QÀ1Íü	e ¯t2D¯ú¿vQi◊ë.»D|/*(m"Y©…Ø]∂N`ëÓ{Ÿâ‡l†W⁄z˚Ë™ﬁ_>†[¿∑21F(€≈˛¸Q¢®.¢≠·D?ä¯¶…X∂ûı˘nÂLçƒ‰££xﬂ}s¥
+[ÑF™†Ta‚E4¿=oM∞G3ZÁ,ÙÅõA±Õ#£®™∏® h⁄áÂ¢G&¥-Î⁄—ä∑DöIy0éSÍ2ßÀrE)j≠ÇlÇfDÔ¿2kVqPÆ©Oî«hÚ &‚¢x®X+vPx0˝⁄ øU#âvz}ﬂ©DM~1’“æ—aÑ™]õ¿ä§∫€∞ÂÄ`øc≈4(∏‚AÉ"≥¢ íˆf'˘¶a£˛πDQ†hx?Æëè·∏4Môœ˝ó>A©3Æ{« !âT˘ãì§=áÖ)<°ÿ+ŒˆBÓıÏ∂}åvà€ìõM2’ox∂q`Hîó!rQÃ’íùâ ¥óáˇ˛\´»D´–îâî»“
+@OêPï8Éß. ∂√ ¢*NTà9ùËøt+Wy.Ê0]ƒtÿP2ZÒ[u•*yF(ıj3ö,≈3
+∆,ë6ë≈õåa)Å*Õ˙H‘πñ–ò#îMNú§÷Ÿì•»T_Y}ısË/IW1˘´z≥V‚d%ı`©ÇπµŸ≠ÑÇ™≤±©vv[Iô¸|—èO‹ò„M6äí)b gíÉå˙wm3ÖN3≤èÂ;©q.*%áòtöñK•‘¯,úﬁï˚ÇS$åP∆vÏ=[‚™ITáØﬂìõìy
+u«”Òuµ⁄Éô^“åGœî‘4ÀÊlÀpïJññôÑ∞(3Äç%–Tœ’tF(Tójd.k©∑ú«’@O¢ÜÂ1N´p∆ß¿≠¯-uÀF¢¥#9ÆéÓJ*@¥)=F&Õq†JrˆM%cX yïj¶øY¿˛Z†A*E49q*ÇÁ¥©√¿∏oa√:CÖ√òR	≥;∑÷˚SR™ T4B%¸}‹mRÿ3	ESÕ·∆≤Çf^PÃ¸%…ëÓ˙?äîî‰ÉÍõ©éŸéR5*jyÂ∫0W7-œÕVé∫∏h&áΩ 	Ãób^Ä :´ƒ’j#q°ËJÑ#Tyƒ!ã∫B~j°ﬁÆrœ˛r≈1O(L´(U‹≠BVG≠»	20í¡£¥-Œ®yöBÕ©Å2‹r¢"(ü;D·∞Û/ù§+«0K:√éPH±Zs≤òEåP≈j£Â£éZ-}W)o=v¨h–‚.åJÈ,(¢Ωçcâ<z∏Ω‰•z5:ò˙…3¢πLìmgË¢Gn, N·ŒòR∆;Îåﬁ¢¢îöå¢ñ“ﬁVAÊ¢Î°˜74°XÊW¬˜œI˛&}ÿ®È˝#°Úõ{Ìœz~D}¯ØŸHheD Kˆäê˜Ùe∑ü1⁄TŒdàïÓk¡z[qzS UT'…è˝% E?Kœd“Sòì3ü)Ÿ™∂µ4~.rÀïtG(‚≈j¿'∑ä9Mﬂå|\`’?Õ¨tä⁄’éB(À¬k¢rªï‹’0äFÿÜ)"T(G®‚ì´"∑ù÷%fMô&∞J’VìFŒêT.´Paó≈õd S∏q,•¬)™A(◊kßù„ìGÑ≤ÕSÍ
+üﬂˆòJõ≥≈rh%ç)≈Q•>Äı;&—÷J… I≠”nkTUÊ&†˚Œ*Wé^Ÿ+{ﬁ8πì<∑z– ≈·,Qú…9í+ª’^p@.”X^ÖUœ¯.Ú∫K	Ÿ”Aß'Ü‚≈}oáÿ;)√S≈¸j°(P≈\z&Xz≤	˝q9Ω—#∏iŸŸ¢òÑ˚á2T≤“P#TΩ™çóQä2ıò˝ä<œªõÄ»|hIC®IÜ·&¢™`QÈD£Ë„!C´:á(ÎFÑBÅP¢œéPböX¬áè§*K"√Ds:{ë@¬–§ˇu’™–vxE¢ñâi1,≠˛°ÿ]*À’Ù[&è¢IcthµÎdÅÛV3*∂—	>Uj´∑}*@QBÆ„Â°^î1BïT∏àø.‡∂™ıdUmÜmpæ§ÕöWæÂ˛òdJT2(´¶Gâ˙7BqÑ*P6Ø|ëª| x#˙S©QÏRÈÁ≤RàÏ~ÆÓ,iÎ4BYËLﬂPêÂÓ…<µG(Í@Y˚$T¥p!MôÿhHò-g˙kºÇÕ4xÏŒ(`E]d«µ∑ ÑÚLÎY˜YKŒÍhEdJ¥ 0‹mQ5rQ¡S5B≈U…;¨jiy˛¥d'(®”-å™ÓhÇVΩ™2«h÷ñag∑Gg∫Ω^LdUßr•„Xöw–pÕTQÏ‚∑ìKíoÓ‘úQQù∆Á´Me*ïYMô+e&ÆÑL©™«däËx?]x@öƒ2D≈€∏ÇÒÆn√∫˙Wèx⁄ŒT™*âÕäûP≈√6î+…_µ(QˇN(éPä3]c%«ë7D_W¢‡S}R…\¶våqYYÁ∏xÜU˙à´7î^µÑ‘)¨@˝íû…j
+ÍyúqN©@Y«ËT…Ï:†],œÃ∆˙®kU†bD®æ!°8∆&‹ ıl^Û#„7Ùú;ÏÁ› Œ4d¶(å„_ÏªÒö±^3ÔêK›ap)©π$dIˆ]∂»R(	ŸIäBŸ≤Ÿ¢Aˆ•|≥˘`ã,Ö≈îÁ˜úsÁŒ˚âÚŒ\˜ûÛ<øÛñsÎÌ†≥€[\ïÊÜy√äÜùÏ	J:≥˙∂KÿÍ6Uìô0§íïÜT«ä˙ñÓ è¨‰´3iÆÃD∂4˙á^ìáÒ⁄¶Ü≈ﬁ6AÌOI™¢õ§!«ú/‹bû	?î*óÛåˆ8èè¸∞†ö2úŒYì§‰∫—Ëú˘ÍY¸π´®¶?;ôrK\âDÛ˛®éı⁄W∂∫•mØÒ¢F U#r⁄•“ù±âzÖÄ∆4∑;éÃ“¨@vÈ>[º-%ÇH€ tY@°˝|‹Ä
+ØTˇ.2áç4GÎrgõiûb∏¡Æá)ƒ…’+)’ä@uÛÉi4∞>»mK´@)ON¥*b©!ë≤ÏÜêﬁÌl¨ç¢6u	K ≈w°VbdJì1<q\,>`B‡˚¡
+ë§û«€Ú´\Î2≥íßä	PÕ8ZhﬁQåQôOç5€√Â±u{"5ˇ—˝J®õÚµ—OX†∫RÉ‘wv£˛¨@IÏ"Ó»ı3ê %Ï<Ì.Üi<uŒ<7≤be"Tôìì8t=ªâ˙†éè6=˜YÀœ'ubxT<â–fë0 ™rû◊èı
+óáÛ—◊tE*c4û¶é UØ∏ﬂ∑∞Um˝‹§Yõ÷’Û
+î®∑dIÜ(^ÙW…KïÿL˙<U=ü*’)€YLë°ÉRiÄzP=z¯ªQ¢AÛLgÆÖ’T|lN¥™
+õ&”Œ≥¯%ÎAÉUK¨;ÜÂp07÷˚d‰>Ñö~Ön2
+√µ`b	ÑÊxÙ‘äT>—Z& Ö1™g®$äáÊFtÙäõ«πM∂ÕœÍﬁ÷å&™ì’(≥∞’*D(GÌh‹
+Ö ¢>ŒÊu&Ì ÊŒï[°èÄ*wrÚ*M˜Íu€HUµ
+@˝k%!Ø}¢UjË®∞Èæ„®≈*l‹ŸAuá≠Z)J/_‹ B±=‹+ÿª˙`_x˙˚î5ÒË‰†Zö%Y^S†ÑJÑÀ√‰9˙÷µ¥£”¶Qe€ö®”c∆åYªvÌ\∆7$“P›¸s´»ﬂÃ>H*P¢{òqz…™»åŒœ‚7<yr«îü %∆P†∆>"c©˘«·√}U˙p2'%ø◊≠áån˜¥ìô—Jï⁄2É öı∞çjTŸ√çã0 íı
+9òâëBâ—®)\rœe(P$lp gÇ‡ﬁ æ:ÊtÊ;Ô‹Ø¨ò®_:πÉ:9ìh_Ø£ƒ<ÍºˇJ e°ÛÆEß‘üíƒÌ.(îYì	∂∫¨	€eQVø[øËÙïõÌPêÜScíÔb ŸíØﬁÂ“‘*JDN∂:ø0Méö®ñàƒKù‹ƒ«:2ï®æ{èèoò:·7(Ñ˛c¥™©üås‘?>n“o(Z(ï˘ÿ¯WÈK£‡∆=w˜Ë%£«nPj’å:¢ƒñsﬁSÊÒÜRC]ur∆OÁÿQrÕÑ®qó¨;°è~z«Õ:l1E†‡âZ9ã+¶π%@e·©ìÀe'^À∏h….Ú’(˘n¡OVåÄ“¯wruÚ¢1Øæ&Qˇ’6Pπ›∑«Íÿ¥û äg·g[L™H?Uı
+~∑àsH‘Ωú”°E∆™§˙GÅ™iÄ‚ã®fE†DÂd–¿˙Nº‘π9Á‹ıÎ◊¶Ã˛PÏ¢®nÅ∑Ñ	<m ∏ãﬂí3•´⁄ÇÓvŒ˝(ŒÅ•ÉP	¬“Ô∆B k∂€ÕﬂP˛Y“rÛ®`©-œÏo√q=œﬂ%ﬂâßíNŒΩc>Ì‰:õR¢‘í2>ﬂ9tMèŒ˚åÖ‘{ ”Æ¿”oÅ¢∂±@Uî99©NﬁÄ7õ‘◊$ÍõU–ëFâ∂5≈
+Œ±ªõ¨FüwP,"Ω»r=bæ‰„›æ/ˆŒµgœÆÓçC?uNP≠5è„ƒÓœ@i≈st^¶Yº˘µÔê.Yl¶"≠@ç>xp€∂Ì3gŒ\ø~˝E≠â(ˇ’©íñª9‡®ëòœ ’TL≈Vïn*∆]P~√K¬∞
+[ÿ∞4iVŸ@:ng)∞•#¡õ õ-P›ﬁ!W«Èü—È"O+µÂ÷u8≠°c⁄† ﬁ–|	mNÓ2ycô’BÅ*CˆI>ÂπûÂï5jÃ9m[Òóê˜ì+594@µ(srRù|úFÛˇä¨∑•ä“±Ô&=_#Ò¬EbŸÜ◊Ãk—a-UUû‘ı]ªvΩ¡x}ßß[‰U$AÇ∑˛
+î–Íº≥‡“qh@∑øöLå–ÿ*e⁄F+
+.[ñ≥å∫t–Tä|Ar”Ø=Âám«d“
+ç_TïÆJ~»≤YKnòhYèä∑∑P≈F‰9Q£Çõ`â'≥*ó•±Ë,ƒ;Ö®¬“r”åo€äÃ?fÀπmÍ Bmÿ∑…¯jàáº¡Éi®Á”º∫≥RU6Ô+j‘À…ßÁïŸ{˜ÓÌ£H∫π,<u—\πµWv «…TbNNN∆…“÷ Å˘/†ƒätãàõ‘⁄ÚÁîNÁ´Ãÿ’VñmTõVoãdWä*ø[îå;›µo†@’í®kÄjˆw†)I∏À¶l¬%<ÒZMç&r]€T„Ç¿ì§¢¬z1EﬁÏ≠1§ÎJˆj ?IFˆ›F¶§⁄ë¨Ï™:g=wAÏÜ
+±äbT‘W–Å¨y((ìrMı{†z¯_†ô#2éwî®ÿSŸˆhe‘ÑíáÀ1µ4c®;(˝ÎÁ<j}Ör† Ê‡µ/ÛövR4Œ˝‘î^|lrê,<Èñ≤U^dE€ÓØiÄ⁄ S˘Ÿ…ã!˛ˇÄ“◊°(∆d≠X„9˚∞¬]ÒÕ9ÀÊ58Ij»ÜQ/î≈∏¿µ€èg™ˇF°¥ﬂc“miT$b@]ßDÎI∏4U™≤;·†l¡kL¡aöÿÇòß@ubõ fÌ4≈‰≤$Ë EáAy°CWu
+2,Pù¨OµÉØ@5†áÚG†^–ﬁ±Mù·´ãc;?”.ö!™¬>5≠RÔÂDYz≠+[•íÒ’h	ÿú∞@m≈ívÌ∫œEﬂÀj…;ü?fI„L„¶~îîn’tπ¨?¶∑"È7%D‘/ú|ÌˇÅ“–“âbÀ£‘‘F–9≈u±<@—ú´G§W>ZåCÓ˘~®Å«pÒ†h(iÓ°ÄåÄù”oq∞WC†ÇBZsZµ0oL¥≥ıg´∏BŸ÷2Iî1≈⁄ú5ßÍ\ﬂæJKnÍ:]≤Ø´´˚6‰Ÿ‚S£PyEÖr] f≠?ç…zäos˚‘¶ÈIüsŒ»±L>W(›™Ú jXRæÌ}+ÊúÜmåÂPÙ˚\óïtxtá∑JÅ
+Ù≤Åå∑{)1è¡Û®r+“Üç™m‹…pÚ©ˇ ∆ºéÕT¢‘lF‘fö$'(›HuxµRCc≈5‰ÙrA%*Jñ–cW/U(äU^T*è˛t¨%˙.ªQL[íCÌÓC»`ù⁄´‚Âs·—÷Â9oï Â8∂0ˆ4üù∫€Ö3∏÷lÊ/V◊ıªm÷˙QUK€P6áJÑ@—‰ê◊)U°¥exe˛ØÄqº¬Jh˚‘¶<ıÇÄ¨îql¯Fgd‘”Ãe9ñ}3p‡ÆÅ+˙j m–‘1@Æós8—1nz~S®®^zƒ9∆ ÖƒZ†"+íBE9T*Û'ã
+êîˇ7P“€,fQ¶[∆º§º¿Ù°RmÕ))/µ™yvOª.Yy ¨†«√ÉLÇæã$÷R¯«˙Œ[–ŸñjΩf`ñ)≈X¬%wÖπ∫EÔ6`VQ€ †húÊÕij%˝\
+‡∞J˙f"mò˚â≠êZsA‹Bm#À¨-PˆÜï¶≥_^Âqêä0D"úúß@iÀ˚Z˝Y@âDUËSÌ·Ììpd ™d52·b€‡%Á≤s≈ÒBëÏΩâ≤íQF2íÑå≤)+dG"î"£Ã(≤W$ŸëôeD2"Â[»ÁÛ=ÁuΩûﬂúÚz‰}Ó˝ùsæ˜ﬁsœ˘ûﬂDxùdÕg"à±ÕRTm.§hÉRdUÀiRL2=˚»Î‘I1»úJiá ±"FLiÉ\'ü’VÚ?iÉƒ)««MÌ∞fÍfÿ—oYÇ«Erâ gµ2u¬Jäﬂ5§\ªº7xÀ6€v™-∫ﬂ•óﬂÄZR÷¥∞*ü‰eÿTe	ãÄ( ‹%§˚’ÇEhST˛„°†X[Ä.#{àÂZd√ë  oH‚lI+ µ ≠8©”ï(6≈ZUÉﬂ¢mQ:4 Ö∞r⁄Y›2ƒ∂¢‡—ÊÍ`]˘¨T=Ü„VË®!°M-1#±Ycﬁ˙Vû€",0—·Äj‡ï8Û}0jõÃËz≥ bŸ9é¯IVııÍI≤b†ÏYrú|ØB$Å˛P0rüû˙.msPFÿpSPÀΩnà%¸ûY„Åà»Ö ãAJ¥£¸—ﬁ‚Ωo˝X∫3™/K5ª?U^ô]w,:Pë)ó‰wŒÏ•fOPëVÂ„'πgßZn>@’wnÚûπVÇ©`Bnh?∏\+¯$’ˆ†’]j‘R8ÒPd UzëﬁC¢*[ùﬂÄ‚˚mÜ4¯SÕeIÙ5◊x∞ª)ÄäY3ÎΩ¬¡‡÷ëó¥Òs∆DÈƒ£˚≤A˚VJ≠ç"£h) 5™ÄSΩb]›dFíó JÓ†ÑC¨™û ıóÛg sù<‹K€≈»îˇ/†ˆ˝∂!Ç([äY)ùÚ 5◊ ∫ÉxÖ}«È2∑«3≥±$Ï†∏mè™;Õ’-B‚Pˇ®&JU
+≠÷∞K„˜^Õg…LeÎ^◊0Dq0Zò˙Ù„œGÛá”f-j∏äÿ6†ûú=2ÍÃœaﬂkx8cÆïV≠“ï7 aL™Âë©à‚p"¢â,”¸7†©2Ì(	Ö~ÖÂM5´B7∏∏Á!™U®¢<õnêî[Ñ‚åå@Ùﬂ°¡“6Y)Â—ÑOpˆ<ƒ/°‚nÏP*45vwh”4êøÎ¡∑j6©…ì<…±"ÄJ≈·≤;y’ﬁ™~Uq¯ˇb®S«ÕàÔCEzº Ê(ªDÜe∆ÖŒÍÈD>_kBääÕUGå≤9Ëp¶ıu@	PÉ(’ôjÅB„0WﬂE˙ t∑D‡Œ•¸{q>˙JMØìÁîÛèq àZﬁ%Í2\œ”Íº¥‚òRPû,ùÀ6Ëì-T~∂C^∑<˚˛zBÚõ∂ÄíD>µﬂâ™Eø¯¨®=€òı2◊tÑq}E‡HÙïe@oõ¯¨S˝nΩ2±|TÛJ2 Â»¢iQ¡Ç•BS‚CŸbC\WA™â∏wOí“YlN˜‰‰‡"Aï(!‘ø¶®O]E·9≥}Œ¶ÈÉ{Ú˘êÖ‰C˛¸y6≤vÕJC˚”íJà.≠“Ä[®€≥’Õkçä¥4•[ﬁŸ˘&&ôÄ¨3MPdˇdåó˝Ê4o¸ˆçó.N>„Õaq§ unõ…v# Lñ‹áU.@’"j¡4 ™1˜â ´Œiõ£ïô⁄ 5ÂÔÔ‹π≥.©∫[‡G§Úñ˜ Rö™Èy(…Ï©Cä'j√ûéñıYœ¶YÁõˇËÉÛ¸~ﬂm>ÿ
+—Å∑À8C6ñ€sWÏÊ˘g∆≤À+iµfÎ«(√s9†Lﬂ—?1L.)OT˛$wﬁŸ˜P8yG~'/öXrdÉíÖ®=ÒTs;0öAí¨^ﬂæΩ“π“Â˙ﬁÚM$l•›§®w˜îW¡hó,˝c# ı∑\É,.KMØê‘Ï«UíéGõ:¡2WvCÍ†‡Fên«Rc ƒ§à5ˇ≠’i~≤‘zCU¢*5S#è≠Dƒ\Tªˆı≠:öÿè•3?Q`8aπY‡ﬁﬂ≥~e†∫yyÉæY⁄î.=££z~	¡†ädﬁ	Q≤≥é`ËÙ‚ê-c{ﬁB1©›˛k,O∞nCàöﬁ]{‹®¨y®l's÷é,N¡ˇy®÷œá¶·&›¿ñß≥◊zìîOM
+tﬂà9û}f]r,„î(n(n	F≤˜3ã<±œ®ØBk&†(öM•NVÿw
+CTuÁûM±i≠Ìj5≠bëﬂ±,@q≥å∞/8Â˙˝8^îÁË≈¿çΩ :äåÇk}M‰ò>d"ÛÕz€£hÖ=lQ}≤¥âoØNWt]~ÌââæR?íùÕ≈•…ÑVÙ~
+zqÇöÔFå_3p…û8e!√Ô∞ƒCˆ≤TìB¶ì£¨rlPˇì{~ÿz—sRÿ™É™{ÃÌ∂È—Ø˜¢·è˜⁄LÇNò2µQô‘®Qø~˝¬ñu67[A°òõı3 ≈ÂKÄ™4K«’ƒÈTËÖ¶E≥Ô{◊KY<ï(oÜ›_¬Ç+lÿ&BàY≥EÛ˛{¿ÉSõK˝©hEî° ˚ìL@©ç™"èú◊F•fªb•Úò'ΩDc®≥¿,>XÄ’a-ñ¶¡ı."±òL]€;oVn∑5¢…KÃêL@ÈÜ7ˆu-o`˚-óâ”gaŸπ|}u_¬6¯Î¶Ê!å®~P⁄†±›iÁ]Ü®L@©Ì1€…‡©°™h∫„˝?†l˜\—˜Ò„AÂŸ:ùX=z,RÀV<'‹cY≤Üpçûp˜˘T¬QÖïØméÑË0Ù¿O‰oÑë†1™lõ¥Î›´◊ãˆÒ’ÕeqíZ£7íIqUdÈ0è+<1B-◊™ºù	 °R£gÍÀ≥∏èë–É√ÖÀÖ˜®ﬂÑHÖ√$:†J N¸-öúàj1+4yNŒz<§∫g¸é 	&5B;.YçIÑSŸEÇÂ∏ﬁUV7Ø	¸≈R“öåT i>AÍ£æÔ†ë∏gﬁ¸Ì≤fﬂ&QvÃÁd∏˝4Ä©V‡Ew#i7úäW›¸mbøàê–*![“@mü,‡‰‘Òﬁt>sÒ◊€¬¥E©Ïçè®0ü¸¶◊ußÏ] í&áQûX#/‡•HÕN<ø7˜&•UÚ:aAÃﬂäŒ;z®.CGÀ/RE=öµpRV‹y¨º$mPr+ﬁ‰ìk]8NNØØ‘kƒ‰ÓÿÄ∂@3ÏË0•qXc≈{Ëw OzU9¸&D%∫k0©ˇ®≠µÀ√Ñ⁄1o≠∞;ˆ%ﬂ.INx¸!©˘?ù√
+ ı∫‹ƒ”ä‡(˜±IÍzó^Ò˛ﬁÈä¯Ü≠«;v¯'>÷“fΩ≥qTà÷l∂ç0°†àﬂ≈_ıìÛ[n_5‘ Hx†¥åé¯T0∂ıñV◊=§iò÷1ô_ÄEê.õxYÜ#™[ICW‚˜+Y™¨«>$¿{æÃ_âÊn’≤êƒ˛Î‚û	X¨ßdm¢Ä·ß÷"∂ƒíﬁGñ§∂&‰˝‘Œ=¢Í5,¯B¬†M¬∞ﬁîå÷πV$˚“4˝Or≤∑ÎVnx˙ﬂ◊Cqc¿ß,/÷ß‡Fá2πb ˝4zôó§2xÚv˛R≤°çƒ˛nñ°§ÆçâbY%|o∂àMPà ‡|_+:lËÂÕúJbYÈRâHL¬˜]+ ƒ˜¨?¨ç√	tΩGåW$0r1^˙Ñ∞ËñÆCûëT2·*k¬ƒÙ¿3ˆI~QvªQ1= qX§êl.+á†ú¯ˇƒØ\NıNØ¢Lâ…ÃÿÌrµ{X¥∂ﬂtr∫G’6ﬁö«i2J˝PIÂ≥VT0ë=¶d¯Û˛≠'ˆåIÌÿÄL\]ä∫≤êîØ$…V/Ò„Ìî†(Qú∆µ,o2@ΩÙA4[Ì≠µ@`Ë•Q"¢òw«1:ê˘7˙æî{PÁâg÷
+u±ÎÒ¢èvYÔÍ.”ô˜1ÍÔ@ZiolË´∑q°Xß]ì »ºQKö„¢øÊ8tƒ '^Ì|:˜∏π©òv[@–ˇÀGÇH@Éı,ö7/"¿üT"]W∏3lpæ„ú'tHƒ≈§⁄çŸ‰ø÷	Èd=˘eEkE˛Å˚⁄µ≥W5ÁÁ=ãØΩ^mŸ=…˙ÆbÙt∂#¢k'ËùL®àHu9qÛZ/‘ﬂ”PñÊn@Kñ≈uiıØì™≤4r@ylr>`Ä>∂ìN¬Öa/=uá«˝0O´e-Ë^©úWAo^«$ãÖ6xçAæ∑•/Fåô≤SpÔN–≈Ä£{, 9!¡xf/·–≤ Î§o-<õç÷xËËH´4π⁄ÇnëÁhtÒÇ˙^¢'Œ2◊ï9Äzoƒ´4UÀ~MÃaë+¶wKr-%z˙≤†Ú—Ê≠k'ò¢È|Ñ=îooMa:áO„›rj™˚£^sß™ˇ5ºXä°Ô©7πrØÕˆƒñAé⁄ ´„qEyÍé≠”∏V[{†É√QYÑ‡â∏b∞~üb‰v¨@ñø§Nö¡†VØ‰∫Áxæ\Ïó £Æ†<YÊÌBQ⁄πjÌR£!Œ-‚W≠dÎ∏èÍ±¯o„Ê’¿¥ñâb1πî_”¡-∑˜=…0ÇûT†ŒäuıS˛˝∞õøl˚|™®o”œ“q˚áe‡Å;n~ÅX–póFŸÊèß†o©ﬁæ´¿1™UXÍº˚ÒÈY?ùΩ›Îº≈≤ÿtTˆ ∂5√T«¥4∆L%/››Tı∑˛îs4¬U_œUvI∂®9£’·e;–mB§·—µ,N(?Óõá's{S¸¢$Ÿ±‹‡a§9L8&ôÚ4z:%(÷’Mna!9Y^
+¸@OÀ,Aôg 2ë"Ÿ¡¥6ØmD-¶‘Ô'!´ò~ÌΩ_…„¯YG¥§¡⁄‘=Ê ~.1ËΩè.é"ñY~N⁄FN∆A?„‡’“„f/Ø$5ŒáèŸ\rjàáQµ_¨O}  åŸ«∆6Å$ãÇƒãÇ»ÿì<‚=ﬂß|îÆ•7È§ƒ'X
+jß—qπ}˜`’ëÈ>˛y∂Z€àñ"ªeîÇ˜‰‹÷UÏZ¸òè2í2≈-2Q≠¿WÉ\9Ãœ0æm3Z÷1*˜3Å\⁄‚2s.b#ärú«(8ú+ÏX¨d∏ÜPg'√_ÜD˚Õ0äπ∞%ŸŒpuzUÿ*,2˝k–Ï∂œ@0áô∂¢¢%,˘≥àró”D‡6∞=øèê¡V V∞≈úΩø#ñΩ¬d-W„8ı"ÉC0}–eú{Ôfsç◊p2»ôe§◊'£ﬂˆ˘I™≥ÒI^µ{~∂Ÿ‚8*_!€Ä≥>8d#e#VR¬Úæ'}S W~WÁ∆™Î]´Ê∂ Gµá¥Õm¶»C∂mÎªÙv6ˆQTÉá”Ô¢ß∏›Òh:⁄Ê5»ï$9Òùüæ6vë{1N»ˇˆŒ áÅÑÅ˘Nˇˇ¡û*wÖ±"ÌiÊ⁄¨SŒ÷ÃÁ<nÕg›È°Ω5ÌIπw>ÅQZ.Àè•€wÏv∑ÍTÕáa—8e’ÚTó ¸è\\¸¸Ø,YßÎóYå7≤èÍTra•¨Ã<‘◊≥Ähn˚~ÍT^∂/€6Œ„US—≠zTp=%Hd•l;À√ñÛËﬂÉó˝¶ï€~‚åa≈c«„îü¥∑+ˇgc_J∑wﬂÖRù?9›0πÿF˘™l–ZØx∫πk'           Ù|$∂•ËÎ    IENDÆB`Ç

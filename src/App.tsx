@@ -2,6 +2,7 @@ import "./App.css";
 
 function App() {
   const handleWidgetOpen = async () => {
+    // eslint-disable-next-line
     const widget: any = document.querySelector("tint-vto");
     if (widget) {
       await widget.open();
