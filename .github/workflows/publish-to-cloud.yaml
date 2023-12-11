@@ -1,0 +1,23 @@
+name: "publish to cloud"
+
+on:
+  push:
+    branches:
+      - gh-actions-playground
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.mTest }}"
+      - id: "upload-file"
+        uses: "google-github-actions/upload-cloud-storage@v1"
+        with:
+          path: "public"
+          destination: "testproject-c9c14.appspot.com/builds/public"
