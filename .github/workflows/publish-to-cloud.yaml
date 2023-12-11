@@ -15,7 +15,7 @@ jobs:
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1"
         with:
-          credentials_json: "${{ secrets.mTest }}"
+          credentials_json: "${{ secrets.MTEST }}"
       - id: "upload-file"
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
