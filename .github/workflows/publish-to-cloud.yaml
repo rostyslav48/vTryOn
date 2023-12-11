@@ -20,11 +20,9 @@ jobs:
         with:
           credentials_json: "${{ secrets.MTEST }}"
       - name: Access Assets Folder in Src
-        run: |
-          ls
-          cd src
+        run: ls
       - id: "upload-file"
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
-          path: "assets"
+          path: "src/assets"
           destination: "testproject-c9c14.appspot.com/builds/public"
