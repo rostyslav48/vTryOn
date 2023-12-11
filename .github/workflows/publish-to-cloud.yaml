@@ -22,5 +22,5 @@ jobs:
       - id: "upload-file"
         uses: "google-github-actions/upload-cloud-storage@v1"
         with:
-          path: "../public"
+          path: "src/assets"
           destination: "testproject-c9c14.appspot.com/builds/public"
