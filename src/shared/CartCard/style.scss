@@ -1,0 +1,18 @@
+.cart-card {
+  height: 60px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  padding: 5px 10px;
+  box-sizing: border-box;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  &__image {
+    height: 40px;
+  }
+
+  &__price {
+    font-size: 14px;
+  }
+}

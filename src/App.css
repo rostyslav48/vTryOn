@@ -40,3 +40,28 @@
 .read-the-docs {
   color: #888;
 }
+
+.catalog {
+  max-height: 80vh;
+  overflow-y: scroll;
+  grid-column: span 5;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.cart {
+  grid-column: span 2;
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  padding: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+
+}
+
+.main {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}

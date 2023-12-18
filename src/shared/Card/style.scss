@@ -1,0 +1,38 @@
+.card {
+  transition: transform 0.2s;
+  max-width: 220px;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+
+  &__image {
+    height: 200px;
+  }
+
+  &__title {
+    font-size: 20px;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 20px;
+  }
+
+  &__button {
+    background-color: #666666;
+    height: 45px;
+    border: none;
+    border-radius: 10px;
+
+    &-m {
+      width: 150px;
+    }
+
+    &-s {
+      width: 50px;
+    }
+  }
+}
